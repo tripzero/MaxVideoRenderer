@@ -7,7 +7,7 @@ from gi.repository import GObject
 leds = None
 
 try:
-	leds = lights.LightArray(16, lights.Apa102Driver())
+	leds = lights.LightArray(200, lights.Apa102Driver())
 except:
 	leds = lights.LightArray(16, lights.OpenCvDriver())
 

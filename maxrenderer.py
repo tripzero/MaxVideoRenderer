@@ -19,11 +19,17 @@ config = None
 def colorChanged(r, g, b, id):
 	color = (r, g, b)
 
-	if config["picture"]['colorFormat'] == 'reversed':
-		color = reversed(color)
+	colorFormat = config['picture']['colorFormat']
+
+	if colorFormat == 'bgr':
+		color = (b, g, r)
+	elif colorFormat == 'rbg':
+		color = (r, b, g)
+	elif colorFormat == 'gbr':
+		color = (g, b, r)
 
 	if leds is not None:
-		leds.changeColor(id, (r, g, b))
+		leds.changeColor(id, color)
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(prog="maxrenderer", description='minnowboard max dlna renderer with opencv', add_help=True)

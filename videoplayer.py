@@ -50,7 +50,7 @@ class FrameAnalyser(QRunnable):
 			rgbImg = cv2.pyrDown(rgbImg)
 
 			if self.config["picture"]["yuv420Convert"]:
-				rgbImg = cv2.cvtColor(rgbImg, cv2.COLOR_YUV2BGR_I420)
+				rgbImg = cv2.cvtColor(rgbImg, cv2.COLOR_YUV2RGB_I420)
 
 			height = rgbImg.shape[0]
 			width = rgbImg.shape[1]
