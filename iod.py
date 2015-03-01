@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 import mraa
 import dbus
@@ -32,25 +32,25 @@ class Pwm(dbus.service.Object):
 	path = None
 
 	def __init__(self, index, pinLayout):
-		self.path = "/pwm"+index
+		self.path = "/pwm"+str(index)
 		dbus.service.Object.__init__(self, dbus.SystemBus(), self.path)
 		self.pwm = mraa.Pwm(pinLayout.pwm[index])
 
-	@dbus.service.method(dbus_interface='io.tripzero.maxio.Pwm', in_signature='b')
+	@dbus.service.method(dbus_interface='@INTERFACE_PREFIX@.Pwm', in_signature='b')
 	def enable(self, value):
 		self.pwm.enable(value)
 
-	@dbus.service.method(dbus_interface='io.tripzero.maxio.Pwm', in_signature='d', out_signature='b')
+	@dbus.service.method(dbus_interface='@INTERFACE_PREFIX@.Pwm', in_signature='d', out_signature='b')
 	def write(self, value):
-		if not pwm:
+		if not self.pwm:
 			return False
 		if self.pwm.write(value) == 0:
 			return True
 		return False
 
-	@dbus.service.method(dbus_interface='io.tripzero.maxio.Pwm', out_signature='d')
+	@dbus.service.method(dbus_interface='@INTERFACE_PREFIX@.Pwm', out_signature='d')
 	def read(self):
-		if not pwm:
+		if not self.pwm:
 			raise org.freedesktop.DBus.Error.InvalidArguments()
 		return self.pwm.read()
 
@@ -76,14 +76,14 @@ class MraaService(dbus.service.Object):
 		i = 0
 		for pin in self.pinLayout.pwm:
 			p = Pwm(i, self.pinLayout)
-			pwm.append(p)
+			self.pwm.append(p)
 			i += 1
 
 
-	@dbus.service.method(dbus_interface='io.tripzero.maxio', out_signature='ao')
+	@dbus.service.method(dbus_interface='@INTERFACE_PREFIX@', out_signature='ao')
 	def GetPwmPaths(self):
 		paths = []
-		for p in pwm:
+		for p in self.pwm:
 			paths.append(dbus.ObjectPath(p.path))
 		return paths
 
@@ -92,7 +92,7 @@ class MraaService(dbus.service.Object):
 if __name__ == '__main__':
 	dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
 	system_bus = dbus.SystemBus()
-	name = dbus.service.BusName('io.tripzero.maxio', system_bus)
+	name = dbus.service.BusName('@DBUS_SERVICE@', system_bus)
 	service = MraaService()
 
 	GObject.MainLoop().run();
