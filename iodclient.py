@@ -11,5 +11,5 @@ class IodClient(dbus.Interface):
 		pwmPaths = self.GetPwmPaths()
 
 		for path in pwmPaths:
-			p = dbus.Interface(dbus.SystemBus().get_object('@DBUS_SERVICE', path), "@INTERFACE_PREFIX@.Pwm")
+			p = dbus.Interface(dbus.SystemBus().get_object('@DBUS_SERVICE@', path), "@INTERFACE_PREFIX@.Pwm")
 			self.pwm.append(p)
