@@ -2,6 +2,8 @@
 
 import mraa
 import dbus
+import dbus.service
+import dbus.mainloop.glib
 
 from gi.repository import GObject, GLib
 
@@ -11,10 +13,15 @@ class MraaService(dbus.service.Object):
 
 	def __init__(self):
 		dbus.service.Object.__init__(self, dbus.SystemBus(), "/")
-		self.pwm[0] = mraa.Pwm(22)
-		self.pwm[1] = mraa.Pwm(24)
+		pwm0 = mraa.Pwm(22)
+		pwm0.enable(True)
+		self.pwm.append(pwm0)
+		pwm1 = mraa.Pwm(24)
+		pwm1.enable(True)
+		self.pwm.append(pwm1)
+		
 	
-	@dbus.service.method(dbus_interface='io.tripzero.maxiod.SetPwm', in_signature='qd', out_signature='b')
+	@dbus.service.method(dbus_interface='io.tripzero.maxio', in_signature='qd', out_signature='b')
 	def SetPwm(self, pwm, value):
 		if len(self.pwm) <= pwm:
 			return False
@@ -22,10 +29,10 @@ class MraaService(dbus.service.Object):
 			return True
 		return False
 
-	@dbus.service.method(dbus_interface='io.tripzero.maxiod.GetPwm', in_signature='q', out_signature='d')
+	@dbus.service.method(dbus_interface='io.tripzero.maxio', in_signature='q', out_signature='d')
 	def GetPwm(self, pwm):
 		if len(self.pwm) <= pwm:
-                        throw new org.freedesktop.DBus.Error.InvalidArguments
+                        raise org.freedesktop.DBus.Error.InvalidArguments()
 		return self.pwm[pwm].read()
 
 if __name__ == '__main__':
