@@ -6,7 +6,7 @@ find_package(PythonInterp 2.7 REQUIRED)
 set(PROJECT_NAME "iod")
 
 set(DBUS_SERVICE "io.tripzero.${PROJECT_NAME}")
-set(IFACE_PREFIX ${DBUS_SERVICE})
+set(INTERFACE_PREFIX ${DBUS_SERVICE})
 
 configure_file (${CMAKE_CURRENT_SOURCE_DIR}/iod.py ${CMAKE_CURRENT_BINARY_DIR}/iod @ONLY)
 configure_file (${CMAKE_CURRENT_SOURCE_DIR}/iodclient.py ${CMAKE_CURRENT_BINARY_DIR}/iodclient.py @ONLY)
