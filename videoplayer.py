@@ -7,8 +7,7 @@ from gi.repository import Gst, GObject, GstVideo, RygelRendererGst
 import sys
 import cv2
 import numpy
-from Queue import *
-from threading import *
+import concurrent.futures
 
 GObject.threads_init()
 Gst.init(None)
@@ -63,17 +62,8 @@ def img_of_frame_i420(imgBuf, width, height):
 
 
 def get_avg_pixel(img):
-	height, width, layers = img.shape
-
-	#img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
 	averagePixelValue = cv2.mean(img)
-
-	#rect = cv2.rectangle(img, (0,0), (width, height), averagePixelValue, -1)
-
-	#cv2.imshow('color', rect)
-
-	return averagePixelValue
+	return averagePixelValue[0], averagePixelValue[1], averagePixelValue[2]
 
 class NewElement(GstVideo.VideoFilter):
 	""" A basic, buffer forwarding Gstreamer element """
@@ -101,39 +91,35 @@ class NewElement(GstVideo.VideoFilter):
 	#register our pad templates
 	__gsttemplates__ = (_srctemplate, _sinktemplate)
 
-	q = Queue()
-	rq = Queue()
+	numthreads = GObject.property(type=int, default=2)
+	everyNthFrame = GObject.property(type=int, default=10)
+
 	frameCount = 0
+	executor = None
 
 	def __init__(self):
 		GstVideo.VideoFilter.__init__(self)
 		self.set_passthrough(True)
-		self.t = Thread(target=self.worker)
-		self.t.daemon = True
-		self.t.start()
-		GObject.idle_add(self.checkResult)
+		self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
 
 	def do_transform_frame_ip(self, inframe):
 		self.frameCount += 1
-		if self.frameCount == 10:
+		if self.frameCount == 1:
 			self.frameCount = 0
 			imgBuf = inframe.buffer.extract_dup(0, inframe.buffer.get_size())
-			self.q.put((imgBuf, inframe.info.width, inframe.info.height))
+			self.executor.submit(self.work, imgBuf, inframe.info.width, inframe.info.height).add_done_callback(self.checkResult)
+
 		return Gst.FlowReturn.OK
 
 	def do_set_info(self, incaps, in_info, outcaps, out_info):
 		return True
 
-	def worker(self):
-		while True:
-			frame, width, height = self.q.get()
-			self.rq.put(get_avg_pixel(img_of_frame_i420(frame, width, height)))
+	def work(self, buff, width, height):
+		return get_avg_pixel(img_of_frame_i420(buff, width, height))
 
-	def checkResult(self):
-		if not self.rq.empty():
-			color = self.rq.get()
-			self.emit('avg_color', color[0], color[1], color[2])
-		return True
+	def checkResult(self, future):
+		red, green, blue = future.result()
+		self.emit('avg_color', red, green, blue)
 
 
 def plugin_init(plugin):
@@ -148,10 +134,10 @@ class Player:
 	colorCallback = None
 	renderer = None
 
-	def __init__(self):
-		self.renderer = RygelRendererGst.PlaybinRenderer.new("Awesome Renderer")
+	def __init__(self, name, iface):
+		self.renderer = RygelRendererGst.PlaybinRenderer.new(name)
 
-		self.renderer.add_interface("wlan0")
+		self.renderer.add_interface(iface)
 
 		vsource = Gst.ElementFactory.make('videotestsrc')
 		self.newElement = Gst.ElementFactory.make("newelement")
@@ -201,7 +187,7 @@ class Player:
 	def setColorChangedCallback(self, cb):
 		self.colorCallback = cb
 
-	def _privateColorHandler(self, r, g, b, data):
+	def _privateColorHandler(self, element, r, g, b):
 		if self.colorCallback is not None:
 			self.colorCallback(r, g, b)
 

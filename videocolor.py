@@ -4,19 +4,29 @@ from gi.repository import GLib
 from gi.repository import GObject
 
 import sys
+import argparse
 
 import videoplayer
+import iodclient
+
+
 
 def colorChanged(r, g, b):
 	pass
 
-print("Hello world!")
+if __name__ == '__main__':
+	parser = argparse.ArgumentParser(prog="maxrenderer", description='minnowboard max dlna renderer with opencv', add_help=False)
+	parser.add_argument('name', help='name of renderer on the network')
+	parser.add_argument('interface', help='network interface to use (ie eth0)')
 
-player = videoplayer.Player()
-player.setColorChangedCallback(colorChanged)
+	args = parser.parse_args()
 
-import signal
-signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-GLib.MainLoop().run()
+	player = videoplayer.Player(args.name, args.interface)
+	player.setColorChangedCallback(colorChanged)
+
+	import signal
+	signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+	GLib.MainLoop().run()
 
