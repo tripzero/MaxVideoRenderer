@@ -9,8 +9,6 @@ import argparse
 import videoplayer
 import iodclient
 
-
-
 def colorChanged(r, g, b):
 	pass
 
