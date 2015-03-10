@@ -34,8 +34,6 @@ class FrameAnalyser:
 	def pool(self, frame):
 		self.executor.submit(self.work, frame).add_done_callback(self.checkResult)
 
-		return Gst.FlowReturn.OK
-
 	def do_set_info(self, incaps, in_info, outcaps, out_info):
 		return True
 
@@ -57,24 +55,25 @@ class Player:
 		self.renderer = RygelRendererGst.PlaybinRenderer.new(name)
 
 		self.renderer.add_interface(iface)
-
-		self.newElement = Gst.ElementFactory.make("opencvfilter")
-
+		analyserQueue = Gst.ElementFactory.make("queue", "analyserqueue")
+		self.newElement = Gst.ElementFactory.make("opencvpassthrough")
 		self.newElement.setCallback(self.analyser.pool)
 
-		#use vaapisink when it works:
 		vsink  = Gst.ElementFactory.make("vaapisink")
 
 		vsink.set_property('fullscreen', True)
 		# create the pipeline
 
 		p = Gst.Bin('happybin')
+
+		p.add(analyserQueue)
 		p.add(self.newElement)
 		p.add(vsink)
 
+		analyserQueue.link(self.newElement)
 		self.newElement.link(vsink)
 
-		p.add_pad(Gst.GhostPad.new('sink', self.newElement.get_static_pad('sink')))
+		p.add_pad(Gst.GhostPad.new('sink', analyserQueue.get_static_pad('sink')))
 
 		self.playbin = self.renderer.get_playbin()
 		self.playbin.set_property('video-sink', p)
