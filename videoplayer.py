@@ -9,87 +9,16 @@ import cv2
 import numpy
 import concurrent.futures
 
+import opencvfilter
+
 GObject.threads_init()
 Gst.init(None)
-
-def img_of_buf(buf, caps):
-	data = buf.extract_dup(0, buf.get_size())
-
-	if buf is None:
-		return None
-	struct = caps[0]
-
-	width = struct['width']
-	height = struct['height']
-
-	array = numpy.frombuffer(data, dtype=numpy.uint8)
-
-	img = array.reshape((height, width, 3))
-
-	return img
-
-def img_of_frame(frame):
-	data = frame.buffer.extract_dup(0, frame.buffer.get_size())
-
-	width = frame.info.width
-	height = frame.info.height
-
-	array = numpy.fromstring(data, numpy.uint8)
-
-	img = array.reshape((height, width, 3))
-
-	return img
-
-def img_of_frame_i420(imgBuf, width, height):
-	planeSize = width*height
-	img=numpy.zeros((height, width, 3), numpy.uint8)
-
-	# Luma
-	y = numpy.fromstring(imgBuf[:planeSize], dtype='uint8')
-	y.shape = (height, width)
-	img[:,:,0] = y
-
-	# Chroma is subsampled, i.e. only available for every 4-th pixel (4:2:0), we need to interpolate
-	u = numpy.fromstring(imgBuf[planeSize:planeSize+planeSize/4], dtype='uint8')
-	u.shape = (height/2, width/2)
-	img[:,:,1] = cv2.resize(u, (width, height), cv2.INTER_LINEAR) #@UndefinedVariable
-
-	v = numpy.fromstring(imgBuf[planeSize+planeSize/4: planeSize+planeSize/2], dtype='uint8') #@UndefinedVariable
-	v.shape = (height/2, width/2)
-	img[:,:,2] = cv2.resize(v, (width, height), cv2.INTER_LINEAR) #@UndefinedVariable
-
-	return cv2.cvtColor(img, cv2.COLOR_YCrCb2RGB)
-
 
 def get_avg_pixel(img):
 	averagePixelValue = cv2.mean(img)
 	return averagePixelValue[0], averagePixelValue[1], averagePixelValue[2]
 
-class NewElement(GstVideo.VideoFilter):
-	""" A basic, buffer forwarding Gstreamer element """
-
-	#here we register our plugin details
-	__gstmetadata__ = (
-		"NewElement plugin",
-		"Generic",
-		"Description is really cool",
-		"Contact")
-
-	__gsignals__ = { 'avg_color' : (GObject.SIGNAL_RUN_FIRST, None, (int, int, int,)) }
-
-	_srctemplate = Gst.PadTemplate.new('src',
-		Gst.PadDirection.SRC,
-		Gst.PadPresence.ALWAYS,
-		Gst.Caps.from_string("video/x-raw,format=I420"))
-
-	#sink pad (template): we recieve buffers from our sink pad
-	_sinktemplate = Gst.PadTemplate.new('sink',
-		Gst.PadDirection.SINK,
-		Gst.PadPresence.ALWAYS,
-		Gst.Caps.from_string("video/x-raw,format=I420"))
-
-	#register our pad templates
-	__gsttemplates__ = (_srctemplate, _sinktemplate)
+class FrameAnalyser:
 
 	numthreads = GObject.property(type=int, default=2)
 	everyNthFrame = GObject.property(type=int, default=10)
@@ -97,37 +26,25 @@ class NewElement(GstVideo.VideoFilter):
 	frameCount = 0
 	executor = None
 
+	callback = None
+
 	def __init__(self):
-		GstVideo.VideoFilter.__init__(self)
-		self.set_passthrough(True)
 		self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
 
-	def do_transform_frame_ip(self, inframe):
-		self.frameCount += 1
-		if self.frameCount == 1:
-			self.frameCount = 0
-			imgBuf = inframe.buffer.extract_dup(0, inframe.buffer.get_size())
-			self.executor.submit(self.work, imgBuf, inframe.info.width, inframe.info.height).add_done_callback(self.checkResult)
+	def pool(self, frame):
+		self.executor.submit(self.work, frame).add_done_callback(self.checkResult)
 
 		return Gst.FlowReturn.OK
 
 	def do_set_info(self, incaps, in_info, outcaps, out_info):
 		return True
 
-	def work(self, buff, width, height):
-		return get_avg_pixel(img_of_frame_i420(buff, width, height))
+	def work(self, frame):
+		return get_avg_pixel(frame)
 
 	def checkResult(self, future):
 		red, green, blue = future.result()
-		self.emit('avg_color', red, green, blue)
-
-
-def plugin_init(plugin):
-	t = GObject.type_register (NewElement)
-	Gst.Element.register(plugin, "newelement", 0, t)
-	return True
-
-Gst.Plugin.register_static(Gst.VERSION_MAJOR, Gst.VERSION_MINOR, "newelement", "newelement filter plugin", plugin_init, '12.06', 'LGPL', 'newelement1', 'newelement2', '')
+		self.callback(red, green, blue)
 
 class Player:
 
@@ -135,19 +52,16 @@ class Player:
 	renderer = None
 
 	def __init__(self, name, iface):
+		self.analyser = FrameAnalyser()
+
 		self.renderer = RygelRendererGst.PlaybinRenderer.new(name)
 
 		self.renderer.add_interface(iface)
 
-		vsource = Gst.ElementFactory.make('videotestsrc')
-		self.newElement = Gst.ElementFactory.make("newelement")
+		self.newElement = Gst.ElementFactory.make("opencvfilter")
 
-		self.newElement.connect('avg_color', self._privateColorHandler)
+		self.newElement.setCallback(self.analyser.pool)
 
-		vconvert1 = Gst.ElementFactory.make("videoconvert", 'vconvert1')
-		#filter2 = Gst.ElementFactory.make("capsfilter", 'filter2')
-		#filter2.set_property('caps', Gst.Caps.from_string("video/x-raw,format=I420"))
-		#vconvert2 = Gst.ElementFactory.make("videoconvert", 'vconvert2')
 		#use vaapisink when it works:
 		vsink  = Gst.ElementFactory.make("vaapisink")
 
@@ -156,15 +70,8 @@ class Player:
 
 		p = Gst.Bin('happybin')
 		p.add(self.newElement)
-		#p.add(vconvert1)
-		#p.add(filter2)
-		#p.add(vconvert2)
 		p.add(vsink)
 
-		#self.newElement.link(vconvert1)
-		#vconvert1.link(filter2)
-		#filter2.link(vconvert2)
-		#vconvert2.link(vsink)
 		self.newElement.link(vsink)
 
 		p.add_pad(Gst.GhostPad.new('sink', self.newElement.get_static_pad('sink')))
@@ -185,11 +92,9 @@ class Player:
 		self.playbin.set_property('uri', uri)
 
 	def setColorChangedCallback(self, cb):
-		self.colorCallback = cb
+		self.analyser.callback = cb
 
-	def _privateColorHandler(self, element, r, g, b):
-		if self.colorCallback is not None:
-			self.colorCallback(r, g, b)
+
 
 
 
