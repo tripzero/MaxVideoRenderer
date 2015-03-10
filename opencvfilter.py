@@ -25,25 +25,17 @@ def img_of_frame(frame):
 
 	return img
 
-def img_of_frame_i420(imgBuf, width, height):
+def img_of_frame_i420(frame):
+	width = frame.info.width
+	height = frame.info.height
 	planeSize = width*height
-	img=np.zeros((height, width, 3), np.uint8)
+	imgBuf = hacks.get_array_video_frame_data_plane(frame.data[0], frame.info.size)
 
-	# Luma
-	y = np.fromstring(imgBuf[:planeSize], dtype='uint8')
-	y.shape = (height, width)
-	img[:,:,0] = y
+	img = np.frombuffer(imgBuf, np.uint8, count=int(width * height * 1.5))
 
-	# Chroma is subsampled, i.e. only available for every 4-th pixel (4:2:0), we need to interpolate
-	u = np.fromstring(imgBuf[planeSize:planeSize+planeSize/4], dtype='uint8')
-	u.shape = (height/2, width/2)
-	img[:,:,1] = cv2.resize(u, (width, height), cv2.INTER_LINEAR) #@UndefinedVariable
+	img.shape = ((height*3/2), width)
 
-	v = np.fromstring(imgBuf[planeSize+planeSize/4: planeSize+planeSize/2], dtype='uint8') #@UndefinedVariable
-	v.shape = (height/2, width/2)
-	img[:,:,2] = cv2.resize(v, (width, height), cv2.INTER_LINEAR) #@UndefinedVariable
-
-	return cv2.cvtColor(img, cv2.COLOR_YCrCb2RGB)
+	return img
 
 class OpenCVBaseFilter(GstVideo.VideoFilter):
 	""" A basic, buffer forwarding Gstreamer element """
@@ -124,7 +116,8 @@ class OpenCVPassthrough(OpenCVBaseFilter):
 
 	def do_transform_frame_ip(self, inframe):
 		imgBuf = inframe.buffer.extract_dup(0, inframe.buffer.get_size())
-		self.executor.submit(img_of_frame_i420, imgBuf, inframe.info.width, inframe.info.height).add_done_callback(self.checkResult)
+		#self.executor.submit(img_of_frame_i420, inframe).add_done_callback(self.checkResult)
+		self.callback(img_of_frame_i420(inframe))
 		return Gst.FlowReturn.OK
 
 	def do_set_info(self, incaps, in_info, outcaps, out_info):

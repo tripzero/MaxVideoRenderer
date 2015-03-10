@@ -15,7 +15,9 @@ GObject.threads_init()
 Gst.init(None)
 
 def get_avg_pixel(img):
-	averagePixelValue = cv2.mean(img)
+	#convert i420 to RGB
+	rgbImg = cv2.cvtColor(img, cv2.COLOR_YUV2RGB_I420)
+	averagePixelValue = cv2.mean(rgbImg)
 	return averagePixelValue[0], averagePixelValue[1], averagePixelValue[2]
 
 class FrameAnalyser:

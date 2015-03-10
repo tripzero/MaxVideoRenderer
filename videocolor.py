@@ -9,6 +9,7 @@ import videoplayer
 import iodclient
 
 def colorChanged(r, g, b):
+	#print("i can has colors: ", r, g, b)
 	pass
 
 if __name__ == '__main__':
@@ -21,6 +22,8 @@ if __name__ == '__main__':
 
 	player = videoplayer.Player(args.name, args.interface)
 	player.setColorChangedCallback(colorChanged)
+	player.setMedia('file:///home/tripzero/Videos/Visual_Dreams_720.mp4')
+	player.play()
 
 	import signal
 	signal.signal(signal.SIGINT, signal.SIG_DFL)
