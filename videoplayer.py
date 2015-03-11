@@ -7,7 +7,9 @@ from gi.repository import Gst, GObject, GstVideo, RygelRendererGst
 import sys
 import cv2
 import numpy
-import concurrent.futures
+import Queue
+
+from PyQt5.QtCore import QRunnable, QThreadPool, QObject, pyqtSignal
 
 import opencvfilter
 
@@ -15,51 +17,61 @@ GObject.threads_init()
 Gst.init(None)
 
 def get_avg_pixel(img):
-	#convert i420 to RGB
-	rgbImg = cv2.cvtColor(img, cv2.COLOR_YUV2RGB_I420)
-	averagePixelValue = cv2.mean(rgbImg)
-	return averagePixelValue[0], averagePixelValue[1], averagePixelValue[2]
+	return cv2.mean(img)
 
-class FrameAnalyser:
+class FrameAnalyserSignals(QObject):
+	result = pyqtSignal(float, float, float, int)
 
-	numthreads = GObject.property(type=int, default=2)
-	everyNthFrame = GObject.property(type=int, default=10)
+class FrameAnalyser(QRunnable):
+	hasResults = FrameAnalyserSignals()
 
-	frameCount = 0
-	executor = None
+	def __init__(self, workQueue):
+		super(FrameAnalyser, self).__init__()
+		self.workQueue = workQueue
 
-	callback = None
+	def run(self):
+		while True:
+			frame = self.workQueue.get()
+			#convert i420 to RGB
+			rgbImg = cv2.cvtColor(frame, cv2.COLOR_YUV2RGB_I420)
+			pixels = []
+			# do about 5 samples of right side of frame
+			height = frame.shape[0]
+			width = frame.shape[1]
 
-	def __init__(self):
-		self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
+			for i in xrange(4):
+				x = width - 20
+				y = height / 5 * i
+				color = get_avg_pixel(rgbImg[y : y + 20, x : x + 20])
+				self.hasResults.result.emit(color[0], color[1], color[2], i)
 
-	def pool(self, frame):
-		self.executor.submit(self.work, frame).add_done_callback(self.checkResult)
-
-	def do_set_info(self, incaps, in_info, outcaps, out_info):
-		return True
-
-	def work(self, frame):
-		return get_avg_pixel(frame)
 
 	def checkResult(self, future):
-		red, green, blue = future.result()
-		self.callback(red, green, blue)
+		color, id = future.result()
+		self.callback(color, id)
 
-class Player:
+class Player(QObject):
 
 	colorCallback = None
 	renderer = None
 
+	colorChanged = pyqtSignal(float, float, float, int)
+
 	def __init__(self, name, iface):
-		self.analyser = FrameAnalyser()
+		QObject.__init__(self)
+		self.workQueue = Queue.Queue()
+		self.analyser = FrameAnalyser(self.workQueue)
+		self.analyser.hasResults.result.connect(self.colorChanged)
+		self.pool = QThreadPool()
+		self.pool.setMaxThreadCount(4)
+		self.pool.start(self.analyser)
 
 		self.renderer = RygelRendererGst.PlaybinRenderer.new(name)
 
 		self.renderer.add_interface(iface)
 		analyserQueue = Gst.ElementFactory.make("queue", "analyserqueue")
 		self.newElement = Gst.ElementFactory.make("opencvpassthrough")
-		self.newElement.setCallback(self.analyser.pool)
+		self.newElement.setCallback(self.addQueue)
 
 		vsink  = Gst.ElementFactory.make("vaapisink")
 
@@ -80,6 +92,12 @@ class Player:
 		self.playbin = self.renderer.get_playbin()
 		self.playbin.set_property('video-sink', p)
 
+	def __del__(self):
+		self.pool.waitForDone()
+
+	def addQueue(self, frame):
+		self.workQueue.put(frame)
+
 	def play(self):
 		self.playbin.set_state(Gst.State.PLAYING)
 
@@ -91,9 +109,6 @@ class Player:
 
 	def setMedia(self, uri):
 		self.playbin.set_property('uri', uri)
-
-	def setColorChangedCallback(self, cb):
-		self.analyser.callback = cb
 
 
 

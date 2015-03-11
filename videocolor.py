@@ -6,10 +6,16 @@ import sys
 import argparse
 
 import videoplayer
-import iodclient
+import cv2
+import numpy as np
 
-def colorChanged(r, g, b):
-	#print("i can has colors: ", r, g, b)
+from PyQt5.QtWidgets import QApplication
+
+def colorChanged(r, g, b, id):
+	#img = np.zeros((300, 300, 3), np.uint8)
+	#print "id", id, "color: ", int(r), int(g), int(b)
+	#cv2.rectangle(img, (0,0), (300,300), (r, g, b), -1)
+	#cv2.imshow(str(id), img)
 	pass
 
 if __name__ == '__main__':
@@ -19,14 +25,15 @@ if __name__ == '__main__':
 
 	args = parser.parse_args()
 
+	app = QApplication(sys.argv)
 
 	player = videoplayer.Player(args.name, args.interface)
-	player.setColorChangedCallback(colorChanged)
+	player.colorChanged.connect(colorChanged)
 	player.setMedia('file:///home/tripzero/Videos/Visual_Dreams_720.mp4')
 	player.play()
 
 	import signal
 	signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-	GObject.MainLoop().run()
+	app.exec_()
 
