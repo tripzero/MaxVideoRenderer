@@ -15,5 +15,5 @@ class Ws2801:
 
 	def changeColor(self, ledNumber, color):
 		self.ledsData[ledNumber] = color
-		spiDev.write(self.ledsData.tostring())
+		spiDev.write(bytearray(self.ledsData.tostring()))
 
