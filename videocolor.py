@@ -30,6 +30,7 @@ if __name__ == '__main__':
 	player = videoplayer.Player(args.name, args.interface)
 	player.colorChanged.connect(colorChanged)
 	player.setMedia('file:///home/tripzero/Videos/Visual_Dreams_720.mp4')
+	player.repeat = True
 	player.play()
 
 	import signal

@@ -56,6 +56,7 @@ class Player(QObject):
 	renderer = None
 
 	colorChanged = pyqtSignal(float, float, float, int)
+	repeat = False
 
 	def __init__(self, name, iface):
 		QObject.__init__(self)
@@ -91,9 +92,24 @@ class Player(QObject):
 
 		self.playbin = self.renderer.get_playbin()
 		self.playbin.set_property('video-sink', p)
+		self.bus = self.playbin.get_bus()
+		self.bus.add_signal_watch()
+		self.bus.connect("message::eos", self.on_finish)
 
 	def __del__(self):
 		self.pool.waitForDone()
+		self.stop()
+
+	def on_finish(self, bus, message):
+		print "stream finished"
+		#self.pause()
+		if self.repeat == True:
+			print "replaying!"
+			if not self.playbin.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH , 0):
+				print "Error seeking back to the beginning"
+			#self.play()
+		else:
+			print "not replaying.  repeat is ", self.repeat
 
 	def addQueue(self, frame):
 		self.workQueue.put(frame)
@@ -108,6 +124,7 @@ class Player(QObject):
 		self.playbin.set_state(Gst.State.NULL)
 
 	def setMedia(self, uri):
+		self.uri = uri
 		self.playbin.set_property('uri', uri)
 
 
