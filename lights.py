@@ -7,8 +7,8 @@ class Ws2801:
 	ledsData = None
 	spiDev = None
 
-	def __init__(self, width, height):
-		self.ledsData = np.zeros((height, width, 3), np.uint8)
+	def __init__(self, ledArraySize):
+		self.ledsData = np.zeros((ledArraySize, 3), np.uint8)
 		client = iodclient.IodClient()
 		spiDev = client.spi[0]
 		spiDev.write(self.ledsData.tostring())
