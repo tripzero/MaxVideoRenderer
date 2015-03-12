@@ -13,7 +13,8 @@ configure_file (${CMAKE_CURRENT_SOURCE_DIR}/iodclient.py ${CMAKE_CURRENT_BINARY_
 configure_file (${CMAKE_CURRENT_SOURCE_DIR}/iod.conf ${CMAKE_CURRENT_BINARY_DIR}/iod.conf @ONLY)
 configure_file (${CMAKE_CURRENT_SOURCE_DIR}/videocolor.py ${CMAKE_CURRENT_BINARY_DIR}/videocolor.py @ONLY)
 configure_file (${CMAKE_CURRENT_SOURCE_DIR}/videoplayer.py ${CMAKE_CURRENT_BINARY_DIR}/videoplayer.py @ONLY)
-configure_file (${CMAKE_CURRENT_SOURCE_DIR}/asyncqueue.py ${CMAKE_CURRENT_BINARY_DIR}/asyncqueue.py @ONLY)
+configure_file (${CMAKE_CURRENT_SOURCE_DIR}/lights.py ${CMAKE_CURRENT_BINARY_DIR}/lights.py @ONLY)
+configure_file (${CMAKE_CURRENT_SOURCE_DIR}/opencvfilter.py ${CMAKE_CURRENT_BINARY_DIR}/opencvfilter.py @ONLY)
 
 execute_process (
    COMMAND ${PYTHON_EXECUTABLE} -c

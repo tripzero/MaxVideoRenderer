@@ -7,24 +7,16 @@ import dbus.mainloop.glib
 
 from gi.repository import GObject
 
-class i2cObject:
-	scl = None
-	sda = None
-
-	def __init__(self, scl, sda):
-		self.scl = scl
-		self.sda = sda
-
 class MaxPinLayout:
 	pwm = [22, 24]
 	gpio = [10, 12, 14, 16, 18, 20, 21]
-	i2c = [i2cObject(13,15)]
-
+	i2c = 2
+	spi = 1
 
 class EdisonPinLayout:
 	pwm = [20, 14, 0, 21]
 	gpio = []
-	i2c = [i2cObject(19, 7), i2cObject(6, 8)]
+	i2c = 2
 
 
 class Pwm(dbus.service.Object):
@@ -32,7 +24,7 @@ class Pwm(dbus.service.Object):
 	path = None
 
 	def __init__(self, index, pinLayout):
-		self.path = "/pwm"+str(index)
+		self.path = "/pwm/"+str(index)
 		dbus.service.Object.__init__(self, dbus.SystemBus(), self.path)
 		self.pwm = mraa.Pwm(pinLayout.pwm[index])
 
@@ -54,10 +46,27 @@ class Pwm(dbus.service.Object):
 			raise org.freedesktop.DBus.Error.InvalidArguments()
 		return self.pwm.read()
 
+class Spi(dbus.service.Object):
+	spi = None
+	path = None
+
+	def __init__(self, busIndex):
+		self.path = "/spi/" + str(busIndex)
+		dbus.service.Object.__init__(self, dbus.SystemBus(), self.path)
+		self.spi = mraa.Spi(busIndex)
+
+	@dbus.service.method(dbus_interface='@INTERFACE_PREFIX@.Spi', in_signature='s', out_signature='s')
+	def write(self, value):
+		if not self.spi:
+			return ''
+		return self.spi.write(value)
+
+
 
 class MraaService(dbus.service.Object):
 
 	pwm = []
+	spi = []
 	pinLayout = None
 
 	def __init__(self):
@@ -79,6 +88,10 @@ class MraaService(dbus.service.Object):
 			self.pwm.append(p)
 			i += 1
 
+		for bus in xrange(self.pinLayout.spi):
+			s = Spi(bus)
+			self.spi.append(s)
+
 
 	@dbus.service.method(dbus_interface='@INTERFACE_PREFIX@', out_signature='ao')
 	def GetPwmPaths(self):
@@ -87,6 +100,12 @@ class MraaService(dbus.service.Object):
 			paths.append(dbus.ObjectPath(p.path))
 		return paths
 
+	@dbus.service.method(dbus_interface='@INTERFACE_PREFIX@', out_signature='ao')
+	def GetSpiPaths(self):
+		paths = []
+		for s in self.spi:
+			paths.append(dbus.ObjectPath(s.path))
+		return paths
 
 
 if __name__ == '__main__':
