@@ -37,6 +37,9 @@ def img_of_frame_i420(frame):
 
 	return img
 
+def get_rect_i420(img):
+	pass
+
 class OpenCVBaseFilter(GstVideo.VideoFilter):
 	""" A basic, buffer forwarding Gstreamer element """
 

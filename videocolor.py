@@ -12,10 +12,15 @@ import lights
 
 from PyQt5.QtWidgets import QApplication
 
-leds = lights.Ws2801(32)
+leds = None
+try:
+	leds = lights.Ws2801(4)
+except:
+	print("failed to load lights.  do you have any?")
 
 def colorChanged(r, g, b, id):
-	leds.changeColor(id, (r, g, b))
+	if leds is not None:
+		leds.changeColor(id, (r, g, b))
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(prog="maxrenderer", description='minnowboard max dlna renderer with opencv', add_help=False)
@@ -28,7 +33,7 @@ if __name__ == '__main__':
 
 	player = videoplayer.Player(args.name, args.interface)
 	player.colorChanged.connect(colorChanged)
-	player.setMedia('file:///home/tripzero/Videos/Visual_Dreams_720.mp4')
+	player.setMedia('file:///home/tripzero/Videos/Rico_Star.mp4')
 	player.repeat = True
 	player.play()
 

@@ -40,8 +40,8 @@ class FrameAnalyser(QRunnable):
 			width = frame.shape[1]
 
 			for i in xrange(4):
-				x = width - 20
-				y = height / 5 * i
+				x = width / 5 * i
+				y = height / 2 - 20
 				color = get_avg_pixel(rgbImg[y : y + 20, x : x + 20])
 				self.hasResults.result.emit(color[0], color[1], color[2], i)
 
@@ -102,12 +102,12 @@ class Player(QObject):
 
 	def on_finish(self, bus, message):
 		print "stream finished"
-		#self.pause()
+		self.stop()
 		if self.repeat == True:
 			print "replaying!"
 			if not self.playbin.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH , 0):
 				print "Error seeking back to the beginning"
-			#self.play()
+			self.play()
 		else:
 			print "not replaying.  repeat is ", self.repeat
 
