@@ -37,8 +37,22 @@ def img_of_frame_i420(frame):
 
 	return img
 
-def get_rect_i420(img):
-	pass
+def get_rect_i420(img, x, y, width, height):
+	imgHeight, imgWidth = img.shape
+	imgHeight = imgHeight / 1.25
+
+	print "height: ", imgHeight
+
+	y = np.array(img[:imgHeight, :imgWidth], np.uint8, copy=False)
+
+
+	#u = np.array(, np.uint8, copy=False)
+	#v = np.array(img[imgHeight/2:imgHeight/2, imgWidth/2:imgWidth/2], np.uint8, copy=False)
+
+	print y
+	print img[imgHeight:imgHeight + imgHeight/4]
+	#print u
+	#print v
 
 class OpenCVBaseFilter(GstVideo.VideoFilter):
 	""" A basic, buffer forwarding Gstreamer element """
