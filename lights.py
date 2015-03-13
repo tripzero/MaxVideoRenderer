@@ -26,13 +26,13 @@ class Ws2801:
 	def updateImg(self):
 		self.spiDev.write(dbus.ByteArray(self.ledsData.tostring()))
 
-	def fade(self, img, fade, time):
+	def fadeTo(self, img, fade, time):
 		# fade the array 'array', from current level to 'fade' in 'time' ms
 		rate = 0.5 / time
 		step = 0
-		GLib.timeout_add(1, self.fade_step, img, rate, step, time)
+		GLib.timeout_add(1, self.fadeToStep, img, rate, step, time)
 
-	def fade_step(self, img, rate, step, time):
+	def fadeToStep(self, img, rate, step, time):
 		img -= img * (1 + rate)
 		self.updateImg()
 
