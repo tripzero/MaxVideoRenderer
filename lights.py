@@ -10,18 +10,16 @@ class Promise:
 	args = None
 	def then(self, success, *args):
 		self.success = success
-		self.args = args
+		if len(args) > 0:
+			self.args = args
+
 	def call(self):
 		if self.success == None:
 			return
-		try:
-			if self.args is not None:
-				self.success(self.args)
-			else:
-				self.success()
-		except:
-			raise Exception("error calling promise")
-
+		if self.args is not None:
+			self.success(*self.args)
+		else:
+			self.success()
 
 class Chase:
 	steps = 0
@@ -30,6 +28,7 @@ class Chase:
 	color = (0,0,0)
 	forward = True
 	promise = None
+	prevColor = (0,0,0)
 
 	def __init__(self, color, steps):
 		self.color = color
@@ -82,13 +81,15 @@ class Ws2801:
 			c.forward = False
 		if c.led <= 0:
 			c.forward = True
+		#restore previous led color
+		self.changeColor(c.led, c.prevColor)
+		c.prevColor = self.ledsData[c.led]
 
 		if c.forward == True:
 			c.led += 1
 		else:
 			c.led -= 1
 
-		self.clear()
 		self.changeColor(c.led, c.color)
 		c.step += 1
 
