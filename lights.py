@@ -63,14 +63,14 @@ class Ws2801:
 		self.update()
 
 	def update(self):
-		if hasTransaction == False:
+		if self.hasTransaction == False:
 			self.spiDev.write(dbus.ByteArray(self.ledsData.tostring()))
 
 	def beginTransaction(self):
-		hasTransaction = True
+		self.hasTransaction = True
 
 	def commit(self):
-		hasTransaction = False
+		self.hasTransaction = False
 		update()
 
 	def changeColor(self, ledNumber, color):
