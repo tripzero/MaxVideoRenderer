@@ -48,13 +48,13 @@ class TransformToColor(Id):
 	promise = None
 	def __init__(self, led, targetColor):
 		Id.__init__(self)
-		print(id,"started")
+		print(self.id,"started")
 		self.led = led
 		self.targetColor = targetColor
 		self.promise = Promise()
 
 	def complete(self):
-		print(id, "completed")
+		print(self.id, "completed")
 		self.promise.call()
 
 class SequentialAnimation:
