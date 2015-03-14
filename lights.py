@@ -129,7 +129,7 @@ class Ws2801:
 		self.ledsData[transform.led] = color
 		self.update()
 		if stillTransforming == False:
-			GObject.timeout_add(1, c.promise.call)
+			GObject.timeout_add(1, transform.promise.call)
 		return stillTransforming
 
 
