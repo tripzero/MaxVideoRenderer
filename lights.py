@@ -3,13 +3,16 @@
 import iodclient
 import numpy as np
 import dbus
+import GObject
 
 class Ws2801:
+	ledArraySize = 0
 	ledsData = None
 	spiDev = None
 
 	def __init__(self, ledArraySize):
-		self.ledsData = np.zeros((ledArraySize, 3), np.uint8)
+		self.ledArraySize = ledArraySize
+		self.ledsData = np.zeros((ledArraySize+1, 3), np.uint8)
 		client = iodclient.IodClient()
 		self.spiDev = client.spi[0]
 
@@ -20,4 +23,35 @@ class Ws2801:
 	def changeColor(self, ledNumber, color):
 		self.ledsData[ledNumber] = color
 		self.spiDev.write(dbus.ByteArray(self.ledsData.tostring()))
+
+	def chase(self, color, time, delay):
+		steps = time / delay
+		led = 0
+		step = 0
+		forward = True
+		GObject.timeout_add(delay, self._doChase, led, color, step, steps forward)
+
+	def _doChase(self, led, color, step, steps, forward):
+		if step >= steps:
+			return False
+		if led >= self.ledArraySize:
+			forward = False
+		if led <= 0:
+			forward = True
+
+		prevLed = led
+
+		if forward == True:
+			led += 1
+		else:
+			led -= 1
+
+		self.changeColor(led, color)
+		step += 1
+
+		return True
+
+
+
+
 
