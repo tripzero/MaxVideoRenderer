@@ -13,10 +13,6 @@ import lights
 from PyQt5.QtWidgets import QApplication
 
 leds = None
-try:
-	leds = lights.Ws2801(4)
-except:
-	print("failed to load lights.  do you have any?")
 
 def colorChanged(r, g, b, id):
 	if leds is not None:
@@ -34,6 +30,11 @@ if __name__ == '__main__':
 
 	player = videoplayer.Player(args.name, args.interface)
 	player.colorChanged.connect(colorChanged)
+	try:
+		leds = lights.Ws2801(args.numLeds)
+	except:
+		print("failed to load lights.  do you have any?")
+
 	player.setNumLeds(args.numLeds)
 
 	import signal

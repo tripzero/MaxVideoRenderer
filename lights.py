@@ -20,7 +20,7 @@ class TransformToColor:
 	steps = (0,0,0)
 	step = (0,0,0)
 	led = 0
-	color = (0,0,0)
+	def __init__(self, led, steps)
 
 class Ws2801:
 	ledArraySize = 0
@@ -67,7 +67,15 @@ class Ws2801:
 
 	def transformColorTo(self, led, color, time):
 		prevColor = self.ledsData[led]
-		#steps = (color[0]
+		steps = (color[0] - prevColor[0], color[1] - prevColor[1], color[2] - prevColor[2])
+		stepsAbs = (abs(steps[0]), abs(steps[1]), abs(steps[2]))
+		delay = time / max(steps)
+		t = TransformToColor(led, steps)
+		GObject.timeout_add(delay, self._doTransformColorTo, t)
+
+	def _doTransformColorTo(self, transform):
+		return False
+
 
 
 
