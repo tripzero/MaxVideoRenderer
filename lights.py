@@ -2,8 +2,13 @@
 
 import mraa
 import numpy as np
-import dbus
+import os
 from gi.repository import GObject
+
+class Id:
+	id = None
+	def __init__(self):
+		self.id = os.urandom(4)
 
 class Promise:
 	success = None
@@ -22,7 +27,7 @@ class Promise:
 			self.success()
 		return False
 
-class Chase:
+class Chase(Id):
 	steps = 0
 	step = 0
 	led = 0
@@ -32,18 +37,31 @@ class Chase:
 	prevColor = (0,0,0)
 
 	def __init__(self, color, steps):
+		Id.__init__(self)
 		self.color = color
 		self.steps = steps
 		self.promise = Promise()
 
-class TransformToColor:
+class TransformToColor(Id):
 	targetColor = [0,0,0]
 	led = 0
 	promise = None
 	def __init__(self, led, targetColor):
+		Id.__init__(self)
+		print(id,"started")
 		self.led = led
 		self.targetColor = targetColor
 		self.promise = Promise()
+
+	def complete(self):
+		print(id, "completed")
+		self.promise.call()
+
+class SequentialAnimation:
+
+	animations = []
+	def addAnimation(self, animation, *args):
+		animations.append((animation, args))
 
 
 class Ws2801:
@@ -51,12 +69,11 @@ class Ws2801:
 	ledsData = None
 	spiDev = None
 	needsUpdate = False
-	fps = 60
+	fps = 30
 
 	def __init__(self, ledArraySize):
 		self.ledArraySize = ledArraySize
 		self.ledsData = np.zeros((ledArraySize+1, 3), np.uint8)
-		client = iodclient.IodClient()
 		self.spiDev = mraa.Spi(0)
 
 	def clear(self):
@@ -70,7 +87,7 @@ class Ws2801:
 
 	def _doUpdate(self):
 		if self.needsUpdate == True:
-			self.spiDev.write(bytearray(self.ledsData.tostring()))
+			self.spiDev.write(bytearray(np.getbuffer(self.ledsData)))
 			self.needsUpdate = False
 		return False
 
@@ -86,7 +103,7 @@ class Ws2801:
 
 	def _doChase(self, c):
 		if c.step >= c.steps:
-			GObject.timeout_add(1, c.promise.call)
+			c.promise.call()
 			return False
 		if c.led >= self.ledArraySize:
 			c.forward = False
@@ -129,7 +146,7 @@ class Ws2801:
 		self.ledsData[transform.led] = color
 		self.update()
 		if stillTransforming == False:
-			GObject.timeout_add(1, transform.promise.call)
+			transform.complete()
 		return stillTransforming
 
 
