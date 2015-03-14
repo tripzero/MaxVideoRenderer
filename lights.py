@@ -5,21 +5,22 @@ import numpy as np
 import dbus
 from gi.repository import GObject
 
+class Chase:
+	steps = 0
+	step = 0
+	led = 0
+	color = (0,0,0)
+	forward = True
+
+	def __init__(self, color, steps):
+		self.color = color
+		self.steps = steps
+
 class Ws2801:
 	ledArraySize = 0
 	ledsData = None
 	spiDev = None
 
-	class ChaseData:
-		steps = 0
-		step = 0
-		led = 0
-		color = (0,0,0)
-		forward = True
-
-		def __init__(self, color, steps):
-			self.color = color
-			self.steps = steps
 
 	def __init__(self, ledArraySize):
 		self.ledArraySize = ledArraySize
@@ -37,7 +38,7 @@ class Ws2801:
 
 	def chase(self, color, time, delay):
 		steps = time / delay
-		c = ChaseData(color, steps)
+		c = Chase(color, steps)
 		GObject.timeout_add(delay, self._doChase, c)
 
 	def _doChase(self, c):
