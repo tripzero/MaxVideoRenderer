@@ -94,8 +94,7 @@ class Player(QObject):
 
 		p.add_pad(Gst.GhostPad.new('sink', analyserQueue.get_static_pad('sink')))
 
-		#self.playbin = self.renderer.get_playbin()
-		self.playbin = Gst.ElementFactory.make('playbin')
+		self.playbin = self.renderer.get_playbin()
 		self.playbin.set_property('video-sink', p)
 		self.bus = self.playbin.get_bus()
 		self.bus.add_signal_watch()

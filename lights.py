@@ -16,11 +16,16 @@ class Chase:
 		self.color = color
 		self.steps = steps
 
+class TransformToColor:
+	steps = (0,0,0)
+	step = (0,0,0)
+	led = 0
+	color = (0,0,0)
+
 class Ws2801:
 	ledArraySize = 0
 	ledsData = None
 	spiDev = None
-
 
 	def __init__(self, ledArraySize):
 		self.ledArraySize = ledArraySize
@@ -46,7 +51,7 @@ class Ws2801:
 			return False
 		if c.led >= self.ledArraySize:
 			c.forward = False
-		if led <= 0:
+		if c.led <= 0:
 			c.forward = True
 
 		if c.forward == True:
@@ -59,6 +64,10 @@ class Ws2801:
 		c.step += 1
 
 		return True
+
+	def transformColorTo(self, led, color, time):
+		prevColor = self.ledsData[led]
+		steps = (color[0]
 
 
 
