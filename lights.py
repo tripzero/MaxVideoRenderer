@@ -20,7 +20,9 @@ class TransformToColor:
 	steps = (0,0,0)
 	step = (0,0,0)
 	led = 0
-	def __init__(self, led, steps)
+	def __init__(self, led, steps):
+		self.led = led
+		self.steps = steps
 
 class Ws2801:
 	ledArraySize = 0
@@ -35,11 +37,14 @@ class Ws2801:
 
 	def clear(self):
 		self.ledsData[:] = (0,0,0)
+		self.update()
+
+	def update(self):
 		self.spiDev.write(dbus.ByteArray(self.ledsData.tostring()))
 
 	def changeColor(self, ledNumber, color):
 		self.ledsData[ledNumber] = color
-		self.spiDev.write(dbus.ByteArray(self.ledsData.tostring()))
+		self.update()
 
 	def chase(self, color, time, delay):
 		steps = time / delay
@@ -69,12 +74,25 @@ class Ws2801:
 		prevColor = self.ledsData[led]
 		steps = (color[0] - prevColor[0], color[1] - prevColor[1], color[2] - prevColor[2])
 		stepsAbs = (abs(steps[0]), abs(steps[1]), abs(steps[2]))
-		delay = time / max(steps)
+		delay = time / max(stepsAbs)
 		t = TransformToColor(led, steps)
 		GObject.timeout_add(delay, self._doTransformColorTo, t)
 
 	def _doTransformColorTo(self, transform):
-		return False
+		stillStepping = False
+		for i in xrange(3):
+			if transform.step[i] < transform.steps[i]:
+				transform.step[i] += 1
+				stillStepping = True
+			elif transform.step[i] > transform.steps[i]:
+				transform.step[i] -= 1
+				stillStepping = True
+		self.ledData[transform.led] += transform.step
+		self.update()
+		return stillStepping
+
+
+
 
 
 
