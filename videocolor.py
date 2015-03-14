@@ -26,6 +26,7 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(prog="maxrenderer", description='minnowboard max dlna renderer with opencv', add_help=False)
 	parser.add_argument('name', help='name of renderer on the network')
 	parser.add_argument('interface', help='network interface to use (ie eth0)')
+	parser.add_argument('numLeds', help='number of leds', type=int)
 
 	args = parser.parse_args()
 
@@ -33,6 +34,7 @@ if __name__ == '__main__':
 
 	player = videoplayer.Player(args.name, args.interface)
 	player.colorChanged.connect(colorChanged)
+	player.setNumLeds(args.numLeds)
 
 	import signal
 	signal.signal(signal.SIGINT, signal.SIG_DFL)

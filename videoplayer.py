@@ -131,6 +131,10 @@ class Player(QObject):
 		self.uri = uri
 		self.playbin.set_property('uri', uri)
 
+	def setNumLeds(self, numLeds):
+		self.numLeds = numLeds
+		self.analyser.numLeds = numLeds
+
 
 
 
