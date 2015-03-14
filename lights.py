@@ -2,13 +2,14 @@
 
 import mraa
 import numpy as np
-import os
 from gi.repository import GObject
 
 class Id:
 	id = None
+	staticId = 0
 	def __init__(self):
-		self.id = os.urandom(4)
+		self.id = Id.staticId
+		Id.staticId += 1
 
 class Promise:
 	success = None
