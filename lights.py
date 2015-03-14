@@ -82,14 +82,15 @@ class Ws2801:
 		if c.led <= 0:
 			c.forward = True
 		#restore previous led color
-		self.changeColor(c.led, c.prevColor)
-		c.prevColor = self.ledsData[c.led]
+		if c.step > 0:
+			self.changeColor(c.led, c.prevColor)
 
 		if c.forward == True:
 			c.led += 1
 		else:
 			c.led -= 1
 
+		c.prevColor = self.ledsData[c.led]
 		self.changeColor(c.led, c.color)
 		c.step += 1
 
