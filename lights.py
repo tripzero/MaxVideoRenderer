@@ -5,23 +5,41 @@ import numpy as np
 import dbus
 from gi.repository import GObject
 
+class Promise:
+	success = None
+	args = None
+	def then(self, success, *args):
+		self.success = success
+		self.args = args
+	def call(self):
+		try:
+			self.success(self.args)
+		except:
+			raise Exception("error calling promise")
+
+
 class Chase:
 	steps = 0
 	step = 0
 	led = 0
 	color = (0,0,0)
 	forward = True
+	promise = None
 
 	def __init__(self, color, steps):
 		self.color = color
 		self.steps = steps
+		self.promise = Promise()
 
 class TransformToColor:
 	targetColor = [0,0,0]
 	led = 0
+	promise = None
 	def __init__(self, led, targetColor):
 		self.led = led
 		self.targetColor = targetColor
+		self.promise = Promise()
+
 
 class Ws2801:
 	ledArraySize = 0
@@ -49,9 +67,11 @@ class Ws2801:
 		steps = time / delay
 		c = Chase(color, steps)
 		GObject.timeout_add(delay, self._doChase, c)
+		return c.promise
 
 	def _doChase(self, c):
 		if c.step >= c.steps:
+			c.promise.call()
 			return False
 		if c.led >= self.ledArraySize:
 			c.forward = False
@@ -76,6 +96,7 @@ class Ws2801:
 		delay = time / max(stepsAbs)
 		t = TransformToColor(led, color)
 		GObject.timeout_add(delay, self._doTransformColorTo, t)
+		return t.promise
 
 	def _doTransformColorTo(self, transform):
 		stillTransforming = False
@@ -89,6 +110,8 @@ class Ws2801:
 				stillTransforming = True
 		self.ledsData[transform.led] = color
 		self.update()
+		if stillTransforming == False:
+			transform.promise.call()
 		return stillTransforming
 
 
