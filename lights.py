@@ -78,18 +78,18 @@ class Ws2801:
 		GObject.timeout_add(delay, self._doTransformColorTo, t)
 
 	def _doTransformColorTo(self, transform):
-		stillStepping = False
+		stillTransforming = False
 		color = self.ledsData[transform.led]
 		for i in xrange(3):
 			if color[i] < transform.targetColor[i]:
 				color[i] += 1
-				stillStepping = True
-			elif color[i] > transform.steps[i]:
+				stillTransforming = True
+			elif color[i] > transform.targetColor[i]:
 				color[i] -= 1
-				stillStepping = True
+				stillTransforming = True
 		self.ledsData[transform.led] = color
 		self.update()
-		return stillStepping
+		return stillTransforming
 
 
 
