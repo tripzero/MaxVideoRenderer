@@ -2,6 +2,7 @@
 
 import iodclient
 import numpy as np
+import dbus
 
 class Ws2801:
 	ledsData = None
@@ -11,9 +12,9 @@ class Ws2801:
 		self.ledsData = np.zeros((ledArraySize, 3), np.uint8)
 		client = iodclient.IodClient()
 		self.spiDev = client.spi[0]
-		self.spiDev.write(self.ledsData.tostring())
+		self.spiDev.write(dbus.ByteArray(self.ledsData.tostring()))
 
 	def changeColor(self, ledNumber, color):
 		self.ledsData[ledNumber] = color
-		self.spiDev.write(self.ledsData.tostring())
+		self.spiDev.write(dbus.ByteArray(self.ledsData.tostring()))
 

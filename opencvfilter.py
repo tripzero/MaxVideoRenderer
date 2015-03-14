@@ -112,7 +112,6 @@ class OpenCVPassthrough(OpenCVBaseFilter):
 
 	def __init__(self):
 		OpenCVBaseFilter.__init__(self)
-		print "I get no love :("
 		self.set_passthrough(True)
 		self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
 
