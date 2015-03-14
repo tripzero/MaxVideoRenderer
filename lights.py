@@ -1,6 +1,6 @@
 #/usr/bin/env python
 
-import iodclient
+import mraa
 import numpy as np
 import dbus
 from gi.repository import GObject
@@ -57,7 +57,7 @@ class Ws2801:
 		self.ledArraySize = ledArraySize
 		self.ledsData = np.zeros((ledArraySize+1, 3), np.uint8)
 		client = iodclient.IodClient()
-		self.spiDev = client.spi[0]
+		self.spiDev = mraa.Spi(0)
 
 	def clear(self):
 		self.ledsData[:] = (0,0,0)
@@ -70,7 +70,7 @@ class Ws2801:
 
 	def _doUpdate(self):
 		if self.needsUpdate == True:
-			self.spiDev.write(dbus.ByteArray(self.ledsData.tostring()))
+			self.spiDev.write(bytearray(self.ledsData.tostring()))
 			self.needsUpdate = False
 		return False
 
