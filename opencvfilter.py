@@ -32,10 +32,12 @@ def img_of_frame_i420(frame):
 	imgBuf = hacks.get_array_video_frame_data_plane(frame.data[0], frame.info.size)
 
 	img = np.frombuffer(imgBuf, np.uint8, count=int(width * height * 1.5))
-
 	img.shape = ((height*3/2), width)
 
 	return img
+
+def get_rect_i420(img):
+	pass
 
 class OpenCVBaseFilter(GstVideo.VideoFilter):
 	""" A basic, buffer forwarding Gstreamer element """

@@ -6,11 +6,21 @@ import sys
 import argparse
 
 import videoplayer
-import iodclient
+import cv2
+import numpy as np
+import lights
 
-def colorChanged(r, g, b):
-	#print("i can has colors: ", r, g, b)
-	pass
+from PyQt5.QtWidgets import QApplication
+
+leds = None
+try:
+	leds = lights.Ws2801(4)
+except:
+	print("failed to load lights.  do you have any?")
+
+def colorChanged(r, g, b, id):
+	if leds is not None:
+		leds.changeColor(id, (r, g, b))
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(prog="maxrenderer", description='minnowboard max dlna renderer with opencv', add_help=False)
@@ -19,14 +29,13 @@ if __name__ == '__main__':
 
 	args = parser.parse_args()
 
+	app = QApplication(sys.argv)
 
 	player = videoplayer.Player(args.name, args.interface)
-	player.setColorChangedCallback(colorChanged)
-	player.setMedia('file:///home/tripzero/Videos/Visual_Dreams_720.mp4')
-	player.play()
+	player.colorChanged.connect(colorChanged)
 
 	import signal
 	signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-	GObject.MainLoop().run()
+	app.exec_()
 

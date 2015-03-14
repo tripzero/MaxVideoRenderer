@@ -55,11 +55,11 @@ class Spi(dbus.service.Object):
 		dbus.service.Object.__init__(self, dbus.SystemBus(), self.path)
 		self.spi = mraa.Spi(busIndex)
 
-	@dbus.service.method(dbus_interface='@INTERFACE_PREFIX@.Spi', in_signature='s', out_signature='s')
+	@dbus.service.method(dbus_interface='@INTERFACE_PREFIX@.Spi', in_signature='ay', out_signature='ay')
 	def write(self, value):
 		if not self.spi:
 			return ''
-		return self.spi.write(value)
+		return self.spi.write(bytearray(value))
 
 
 
