@@ -20,6 +20,7 @@ class Promise:
 			self.success(*self.args)
 		else:
 			self.success()
+		return False
 
 class Chase:
 	steps = 0
@@ -49,6 +50,7 @@ class Ws2801:
 	ledArraySize = 0
 	ledsData = None
 	spiDev = None
+	hasTransaction = False
 
 	def __init__(self, ledArraySize):
 		self.ledArraySize = ledArraySize
@@ -61,7 +63,15 @@ class Ws2801:
 		self.update()
 
 	def update(self):
-		self.spiDev.write(dbus.ByteArray(self.ledsData.tostring()))
+		if hasTransaction == False:
+			self.spiDev.write(dbus.ByteArray(self.ledsData.tostring()))
+
+	def beginTransaction(self):
+		hasTransaction = True
+
+	def commit(self):
+		hasTransaction = False
+		update()
 
 	def changeColor(self, ledNumber, color):
 		self.ledsData[ledNumber] = color
@@ -75,15 +85,14 @@ class Ws2801:
 
 	def _doChase(self, c):
 		if c.step >= c.steps:
-			c.promise.call()
+			GObject.timeout_add(1, c.promise.call)
 			return False
 		if c.led >= self.ledArraySize:
 			c.forward = False
 		if c.led <= 0:
 			c.forward = True
 		#restore previous led color
-		if c.step > 0:
-			self.changeColor(c.led, c.prevColor)
+		self.changeColor(c.led, c.prevColor)
 
 		if c.forward == True:
 			c.led += 1
@@ -91,6 +100,7 @@ class Ws2801:
 			c.led -= 1
 
 		c.prevColor = self.ledsData[c.led]
+		print c.prevColor
 		self.changeColor(c.led, c.color)
 		c.step += 1
 
@@ -118,14 +128,7 @@ class Ws2801:
 		self.ledsData[transform.led] = color
 		self.update()
 		if stillTransforming == False:
-			transform.promise.call()
+			GObject.timeout_add(1, c.promise.call)
 		return stillTransforming
-
-
-
-
-
-
-
 
 
