@@ -3,7 +3,7 @@
 import iodclient
 import numpy as np
 import dbus
-import GObject
+from gi.repository import GObject
 
 class Ws2801:
 	ledArraySize = 0
