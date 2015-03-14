@@ -50,7 +50,8 @@ class Ws2801:
 	ledArraySize = 0
 	ledsData = None
 	spiDev = None
-	hasTransaction = False
+	needsUpdate = False
+	fps = 60
 
 	def __init__(self, ledArraySize):
 		self.ledArraySize = ledArraySize
@@ -63,15 +64,15 @@ class Ws2801:
 		self.update()
 
 	def update(self):
-		if self.hasTransaction == False:
+		if self.needsUpdate == False:
+			GObject.timeout_add(1000/self.fps, self._doUpdate)
+		self.needsUpdate = True
+
+	def _doUpdate(self):
+		if self.needsUpdate == True:
 			self.spiDev.write(dbus.ByteArray(self.ledsData.tostring()))
-
-	def beginTransaction(self):
-		self.hasTransaction = True
-
-	def commit(self):
-		self.hasTransaction = False
-		update()
+			self.needsUpdate = False
+		return False
 
 	def changeColor(self, ledNumber, color):
 		self.ledsData[ledNumber] = color
