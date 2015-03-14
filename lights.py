@@ -12,6 +12,9 @@ class Ws2801:
 		self.ledsData = np.zeros((ledArraySize, 3), np.uint8)
 		client = iodclient.IodClient()
 		self.spiDev = client.spi[0]
+
+	def clear(self):
+		self.ledsData[:] = (0,0,0)
 		self.spiDev.write(dbus.ByteArray(self.ledsData.tostring()))
 
 	def changeColor(self, ledNumber, color):
