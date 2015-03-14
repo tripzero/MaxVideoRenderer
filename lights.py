@@ -87,7 +87,7 @@ class Ws2801:
 			elif transform.step[i] > transform.steps[i]:
 				transform.step[i] -= 1
 				stillStepping = True
-		self.ledData[transform.led] += transform.step
+		self.ledsData[transform.led] += transform.step
 		self.update()
 		return stillStepping
 
