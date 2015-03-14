@@ -67,7 +67,7 @@ class Ws2801:
 
 	def transformColorTo(self, led, color, time):
 		prevColor = self.ledsData[led]
-		steps = (color[0]
+		#steps = (color[0]
 
 
 
