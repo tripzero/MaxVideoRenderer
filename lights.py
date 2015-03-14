@@ -29,7 +29,7 @@ class Ws2801:
 		led = 0
 		step = 0
 		forward = True
-		GObject.timeout_add(delay, self._doChase, led, color, step, steps forward)
+		GObject.timeout_add(delay, self._doChase, led, color, step, stepsn forward)
 
 	def _doChase(self, led, color, step, steps, forward):
 		if step >= steps:
