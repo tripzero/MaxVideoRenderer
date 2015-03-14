@@ -12,8 +12,13 @@ class Promise:
 		self.success = success
 		self.args = args
 	def call(self):
+		if self.success == None:
+			return
 		try:
-			self.success(self.args)
+			if self.args is not None:
+				self.success(self.args)
+			else:
+				self.success()
 		except:
 			raise Exception("error calling promise")
 
