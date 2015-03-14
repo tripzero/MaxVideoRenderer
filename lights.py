@@ -10,6 +10,17 @@ class Ws2801:
 	ledsData = None
 	spiDev = None
 
+	class ChaseData:
+		steps = 0
+		step = 0
+		led = 0
+		color = (0,0,0)
+		forward = True
+
+		def __init__(self, color, steps):
+			self.color = color
+			self.steps = steps
+
 	def __init__(self, ledArraySize):
 		self.ledArraySize = ledArraySize
 		self.ledsData = np.zeros((ledArraySize+1, 3), np.uint8)
@@ -26,28 +37,25 @@ class Ws2801:
 
 	def chase(self, color, time, delay):
 		steps = time / delay
-		led = 0
-		step = 0
-		forward = True
-		GObject.timeout_add(delay, self._doChase, led, color, step, steps, forward)
+		c = ChaseData(color, steps)
+		GObject.timeout_add(delay, self._doChase, c)
 
-	def _doChase(self, led, color, step, steps, forward):
-		if step >= steps:
+	def _doChase(self, c):
+		if c.step >= c.steps:
 			return False
-		if led >= self.ledArraySize:
-			forward = False
+		if c.led >= self.ledArraySize:
+			c.forward = False
 		if led <= 0:
-			forward = True
+			c.forward = True
 
-		prevLed = led
-
-		if forward == True:
-			led += 1
+		if c.forward == True:
+			c.led += 1
 		else:
-			led -= 1
+			c.led -= 1
 
-		self.changeColor(led, color)
-		step += 1
+		self.clear()
+		self.changeColor(c.led, c.color)
+		c.step += 1
 
 		return True
 
