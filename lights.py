@@ -49,13 +49,11 @@ class TransformToColor(Id):
 	promise = None
 	def __init__(self, led, targetColor):
 		Id.__init__(self)
-		print(self.id,"started")
 		self.led = led
 		self.targetColor = targetColor
 		self.promise = Promise()
 
 	def complete(self):
-		print(self.id, "completed")
 		self.promise.call()
 
 class BaseAnimation:
@@ -63,12 +61,12 @@ class BaseAnimation:
 	promise = None
 
 	def __init__(self):
-		promise = Promise()
+		self.promise = Promise()
 
 	def addAnimation(self, animation, *args):
 		if len(args) == 0:
 			args = None
-		animations.append((animation, args))
+		self.animations.append((animation, args))
 
 	def _do(self, animation):
 		methodCall = animation[0]
@@ -79,7 +77,6 @@ class BaseAnimation:
 			return methodCall(*args)
 
 class SequentialAnimation(BaseAnimation):
-
 
 	def __init__(self):
 		BaseAnimation.__init__(self)
@@ -103,7 +100,7 @@ class ConcurrentAnimation(BaseAnimation):
 
 	def _animationComplete(self, animation):
 		self.animations.remove(animation)
-		if len(animations) == 0:
+		if len(self.animations) == 0:
 			self.promise.call()
 
 class Ws2801:
