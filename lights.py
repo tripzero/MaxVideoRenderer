@@ -58,12 +58,53 @@ class TransformToColor(Id):
 		print(self.id, "completed")
 		self.promise.call()
 
-class SequentialAnimation:
-
+class BaseAnimation:
 	animations = []
+	promise = None
+
+	def __init__(self):
+		promise = Promise()
+
 	def addAnimation(self, animation, *args):
+		if len(args) == 0:
+			args = None
 		animations.append((animation, args))
 
+	def _do(self, animation):
+		methodCall = animation[0]
+		args = animation[1]
+		if animation[1] is None:
+			return methodCall()
+		else:
+			return methodCall(*args)
+
+class SequentialAnimation(BaseAnimation):
+
+
+	def __init__(self):
+		BaseAnimation.__init__(self)
+
+	def start(self):
+		if len(self.animations) == 0:
+			self.promise.call()
+		animation = self.animations.pop(0)
+		self._do(animation)
+		return self.promise
+
+class ConcurrentAnimation(BaseAnimation):
+
+	def __init__(self):
+		BaseAnimation.__init__(self)
+
+	def start(self):
+		for animation in self.animations:
+			self._do(animation).then(self._animationComplete, animation)
+		return self.promise
+
+	def _animationComplete(self, animation):
+		self.animations.remove(animation)
+		if len(animations) == 0:
+			self.promise.call()
 
 class Ws2801:
 	ledArraySize = 0
