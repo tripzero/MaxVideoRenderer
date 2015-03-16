@@ -32,7 +32,6 @@ def img_of_frame_i420(frame):
 	imgBuf = hacks.get_array_video_frame_data_plane(frame.data[0], frame.info.size)
 
 	img = np.frombuffer(imgBuf, np.uint8, count=int(width * height * 1.5))
-
 	img.shape = ((height*3/2), width)
 
 	return img
@@ -127,7 +126,6 @@ class OpenCVPassthrough(OpenCVBaseFilter):
 
 	def __init__(self):
 		OpenCVBaseFilter.__init__(self)
-		print "I get no love :("
 		self.set_passthrough(True)
 		self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
 

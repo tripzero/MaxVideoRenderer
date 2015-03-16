@@ -15,6 +15,7 @@ configure_file (${CMAKE_CURRENT_SOURCE_DIR}/videocolor.py ${CMAKE_CURRENT_BINARY
 configure_file (${CMAKE_CURRENT_SOURCE_DIR}/videoplayer.py ${CMAKE_CURRENT_BINARY_DIR}/videoplayer.py @ONLY)
 configure_file (${CMAKE_CURRENT_SOURCE_DIR}/lights.py ${CMAKE_CURRENT_BINARY_DIR}/lights.py @ONLY)
 configure_file (${CMAKE_CURRENT_SOURCE_DIR}/opencvfilter.py ${CMAKE_CURRENT_BINARY_DIR}/opencvfilter.py @ONLY)
+configure_file (${CMAKE_CURRENT_SOURCE_DIR}/gst_hacks.py ${CMAKE_CURRENT_BINARY_DIR}/gst_hacks.py @ONLY)
 
 execute_process (
    COMMAND ${PYTHON_EXECUTABLE} -c
