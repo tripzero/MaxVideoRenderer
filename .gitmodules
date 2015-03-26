@@ -1,0 +1,3 @@
+[submodule "opencvfilter"]
+	path = opencvfilter
+	url = https://github.com/tripzero/opencvfilter
