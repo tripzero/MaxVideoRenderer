@@ -23,6 +23,7 @@ if __name__ == '__main__':
 	parser.add_argument('name', help='name of renderer on the network')
 	parser.add_argument('interface', help='network interface to use (ie eth0)')
 	parser.add_argument('numLeds', help='number of leds', type=tuple)
+	parser.add_argument('--file', help='play file instead', type=string)
 
 	args = parser.parse_args()
 
@@ -31,9 +32,9 @@ if __name__ == '__main__':
 	player = videoplayer.Player(args.name, args.interface)
 	player.colorChanged.connect(colorChanged)
 	try:
-		leds = lights.Ws2801(args.numLeds)
+		leds = lights.LightArray(args.numLeds, lights.Ws2801Driver())
 	except:
-		print("failed to load lights.  do you have any?")
+		leds = lights.LightArray(args.numLeds, lights.OpenCvDriver())
 
 	player.setNumLeds((11, 28));
 

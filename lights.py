@@ -1,6 +1,5 @@
 #/usr/bin/env python
 
-import mraa
 import numpy as np
 from gi.repository import GObject
 
@@ -103,17 +102,17 @@ class ConcurrentAnimation(BaseAnimation):
 		if len(self.animations) == 0:
 			self.promise.call()
 
-class Ws2801:
+class LightArray:
 	ledArraySize = 0
 	ledsData = None
-	spiDev = None
 	needsUpdate = False
 	fps = 30
+	driver = None
 
-	def __init__(self, ledArraySize):
+	def __init__(self, ledArraySize, driver):
 		self.ledArraySize = ledArraySize
 		self.ledsData = np.zeros((ledArraySize+1, 3), np.uint8)
-		self.spiDev = mraa.Spi(0)
+		self.driver = driver
 
 	def clear(self):
 		self.ledsData[:] = (0,0,0)
@@ -126,7 +125,7 @@ class Ws2801:
 
 	def _doUpdate(self):
 		if self.needsUpdate == True:
-			self.spiDev.write(bytearray(np.getbuffer(self.ledsData)))
+			self.driver.update(self.ledsData)
 			self.needsUpdate = False
 		return False
 
@@ -188,4 +187,30 @@ class Ws2801:
 			transform.complete()
 		return stillTransforming
 
+class Ws2801Driver:
+	spiDev = None
 
+	def __init__(self):
+		import mraa
+		self.spiDev = mraa.Spi(0)
+
+	def update(self, ledsData):
+		self.spiDev.write(bytearray(np.getbuffer(ledsData)))
+
+class OpenCvDriver:
+
+	image = None
+	size = 20
+
+	def update(self, ledsData):
+		import cv2
+
+		if self.image == None:
+			self.image = np.zeros((self.size, ledsData.size / 3 * self.size, 3), np.uint8)
+
+		x = 0
+		for color in ledsData:
+			self.image[0 : self.size, x : x + self.size] = color
+			x += self.size
+
+		cv2.imshow("output", self.image)

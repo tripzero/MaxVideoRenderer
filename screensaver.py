@@ -1,13 +1,16 @@
 #!/usr/bin/env python
 
-import mraa
 import lights
 import random
 from gi.repository import GObject
 
-print mraa.getVersion()
+leds = None
 
-leds = lights.Ws2801(28)
+try:
+	leds = lights.LightArray(28, lights.Ws2801Driver())
+except:
+	leds = lights.LightArray(28, lights.OpenCvDriver())
+
 leds.clear()
 
 
@@ -16,7 +19,7 @@ def done():
 
 def randomRainbowTransforms():
 	concurrentTransform = lights.ConcurrentAnimation()
-	
+
 	for i in xrange(leds.ledArraySize):
 		r = random.randint(0, 255)
 		g = random.randint(0, 255)
