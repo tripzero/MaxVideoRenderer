@@ -33,6 +33,7 @@ def img_of_frame_i420(frame):
 
 	img = np.frombuffer(imgBuf, np.uint8, count=int(width * height * 1.5))
 	img.shape = ((height*3/2), width)
+	cv2.imshow("i420", img)
 
 	return img
 

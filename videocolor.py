@@ -22,7 +22,7 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(prog="maxrenderer", description='minnowboard max dlna renderer with opencv', add_help=False)
 	parser.add_argument('name', help='name of renderer on the network')
 	parser.add_argument('interface', help='network interface to use (ie eth0)')
-	parser.add_argument('numLeds', help='number of leds', type=int)
+	parser.add_argument('numLeds', help='number of leds', type=tuple)
 
 	args = parser.parse_args()
 
@@ -35,7 +35,7 @@ if __name__ == '__main__':
 	except:
 		print("failed to load lights.  do you have any?")
 
-	player.setNumLeds(args.numLeds)
+	player.setNumLeds((11, 28));
 
 	import signal
 	signal.signal(signal.SIGINT, signal.SIG_DFL)
