@@ -11,7 +11,7 @@ import Queue
 
 from PyQt5.QtCore import QRunnable, QThreadPool, QObject, pyqtSignal
 
-import opencvfilter
+import opencvfilter.opencvfilter
 
 GObject.threads_init()
 Gst.init(None)
@@ -26,67 +26,78 @@ class FrameAnalyser(QRunnable):
 	hasResults = FrameAnalyserSignals()
 	numLeds = 0
 	testFrame = None
+	test = False
 
 	def __init__(self, workQueue):
 		super(FrameAnalyser, self).__init__()
 		self.workQueue = workQueue
 
+
 	def run(self):
 		while True:
+			#catch up to the latest frame if we are behind
 			while self.workQueue.qsize() > 1:
 				self.workQueue.get()
-			#catch up to the latest frame if we are behind
 			frame = self.workQueue.get()
-			#convert i420 to RGB
+
+			if self.numLeds is not None:
+				self.numLeds = (11, 28)
+
 			dheight = self.numLeds[0]
 			dwidth = self.numLeds[1]
-
-			rgbImg = cv2.cvtColor(frame, cv2.COLOR_YUV2RGB_I420)
-			#rgbImg = cv2.pyrDown(rgbImg)
-
+			#rgbImg = frame
+			rgbImg = cv2.pyrDown(frame)
+			rgbImg = cv2.pyrDown(rgbImg)
+			rgbImg = cv2.cvtColor(rgbImg, cv2.COLOR_YUV2BGR_I420)
 			#cv2.imshow("rgbimg downscaled: ", rgbImg)
 
 			height = rgbImg.shape[0]
 			width = rgbImg.shape[1]
 
-			if self.testFrame == None:
+			if self.test == True and self.testFrame == None:
 				self.testFrame = numpy.zeros((height, width, 3), numpy.uint8)
 
 			i = 0
-			yStep = height / dheight
-			xStep = width / dwidth
+			yStep = height / (dheight + 1)
+			xStep = width / (dwidth + 1)
 
-			y=height-1
-			x = 1
+			y=height
+			x = 0
 			while x < width:
 				color = get_avg_pixel(rgbImg[height - yStep : height, x : x + xStep])
-				self.testFrame[height - yStep : height, x : x + xStep] = color[:3]
+				if self.test == True:
+					self.testFrame[height - yStep : height, x : x + xStep] = color[:3]
 				self.hasResults.result.emit(color[0], color[1], color[2], i)
 				i += 1
 				x += xStep
 
 			while y >= 0:
 				color = get_avg_pixel(rgbImg[y : y + yStep, width - xStep : width])
-				self.testFrame[y : y + yStep, width - xStep : width] = color[:3]
+				if self.test == True:
+					self.testFrame[y : y + yStep, width - xStep : width] = color[:3]
 				self.hasResults.result.emit(color[0], color[1], color[2], i)
 				y -= yStep
 				i += 1
 
 			while x >= 0:
 				color = get_avg_pixel(rgbImg[0 : yStep, x - xStep : x])
-				self.testFrame[0 : yStep, x - xStep : x] = color[:3]
+				if self.test == True:
+					self.testFrame[0 : yStep, x - xStep : x] = color[:3]
 				self.hasResults.result.emit(color[0], color[1], color[2], i)
 				x -= xStep
 				i += 1
 
 			while y < height:
 				color = get_avg_pixel(rgbImg[y : y + yStep, 0 : xStep])
-				self.testFrame[y : y + yStep, 0 : xStep] = color[:3]
+				if self.test == True:
+					self.testFrame[y : y + yStep, 0 : xStep] = color[:3]
 				self.hasResults.result.emit(color[0], color[1], color[2], i)
 				i += 1
 				y += yStep
 
-			cv2.imshow("test", self.testFrame)
+			if self.test == True:
+				cv2.imshow("test", self.testFrame)
+
 			'''for i in xrange(self.numLeds - 1):
 				x = width / self.numLeds * i
 				y = height / 2 - 20
@@ -159,6 +170,12 @@ class Player(QObject):
 			GObject.timeout_add(1000, self.play)
 		else:
 			print "not replaying.  repeat is ", self.repeat
+
+	def addQueue(self, frame):
+		self.workQueue.put(frame)
+
+	def __del__(self):
+		self.pool.waitForDone()
 
 	def addQueue(self, frame):
 		self.workQueue.put(frame)
