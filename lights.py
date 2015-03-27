@@ -166,7 +166,10 @@ class LightArray:
 		prevColor = self.ledsData[led]
 		steps = [color[0] - prevColor[0], color[1] - prevColor[1], color[2] - prevColor[2]]
 		stepsAbs = [abs(steps[0]), abs(steps[1]), abs(steps[2])]
-		delay = time / max(stepsAbs)
+		maxSteps = max(stepsAbs)
+		if maxSteps == 0:
+			maxSteps = 1
+		delay = time / maxSteps
 		t = TransformToColor(led, color)
 		GObject.timeout_add(delay, self._doTransformColorTo, t)
 		return t.promise
