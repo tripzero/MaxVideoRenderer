@@ -200,6 +200,28 @@ class Ws2801Driver:
 	def update(self, ledsData):
 		self.spiDev.write(bytearray(np.getbuffer(ledsData)))
 
+class Apa102Driver:
+	spiDev = None
+
+	def __init__(self, freqs=1000000):
+		import mraa
+		self.spiDev = mraa.Spi(0)
+		self.spiDev.frequency(freqs)
+
+	def update(self, ledsData):
+		data = bytearray()
+		data += chr(0x00) + chr(0x00) + chr(0x00) + chr(0x00)
+		for rgb in ledsData:
+			data += chr(0xff)
+			data += chr(rgb[0]) + chr(rgb[1]) + chr(rgb[2])
+
+		i = 0
+		while i < len(ledsData):
+			data += chr(0xff)
+			i+=16
+
+		self.spiDev.write(data)
+
 class OpenCvDriver:
 
 	image = None
