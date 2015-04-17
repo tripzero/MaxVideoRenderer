@@ -9,6 +9,7 @@ import videoplayer
 import cv2
 import numpy as np
 import lights
+import json
 
 from PyQt5.QtWidgets import QApplication
 
@@ -20,23 +21,41 @@ def colorChanged(r, g, b, id):
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(prog="maxrenderer", description='minnowboard max dlna renderer with opencv', add_help=False)
-	parser.add_argument('name', help='name of renderer on the network')
-	parser.add_argument('interface', help='network interface to use (ie eth0)')
-	parser.add_argument('numLeds', help='number of leds', type=tuple)
-	parser.add_argument('--file', help='play file instead', type=string)
+	parser.add_argument('--file', help='play file instead', dest="file")
 
 	args = parser.parse_args()
 
 	app = QApplication(sys.argv)
 
-	player = videoplayer.Player(args.name, args.interface)
-	player.colorChanged.connect(colorChanged)
-	try:
-		leds = lights.LightArray(args.numLeds, lights.Ws2801Driver())
-	except:
-		leds = lights.LightArray(args.numLeds, lights.OpenCvDriver())
+	config = None
 
-	player.setNumLeds((11, 28));
+	with open('config.json') as dataFile:
+		config = json.load(dataFile)
+
+	player = videoplayer.Player(config["dlnaRenderer"]["name"], config["dlnaRenderer"]["interface"])
+	player.colorChanged.connect(colorChanged)
+
+	bottom = config["bottom"]["ledCount"]
+	right = config["right"]["ledCount"]
+	top = config["top"]["ledCount"]
+	left = config["left"]["ledCount"]
+
+	numLeds = bottom + right + top + left
+
+	driver = None
+	driverName = config["driver"]
+	if driverName == "Ws2901":
+		leds = lights.LightArray(numLeds, lights.Ws2801Driver())
+	elif driverName == "Apa102":
+		leds = lights.LightArray(numLeds, lights.Apa102Driver())
+	else:
+		leds = lights.LightArray(numLeds, lights.OpenCvDriver())
+
+	player.setNumLeds((bottom, right, top, left));
+
+	if args.file is not None:
+		player.setMedia(args.file)
+		player.play()
 
 	import signal
 	signal.signal(signal.SIGINT, signal.SIG_DFL)

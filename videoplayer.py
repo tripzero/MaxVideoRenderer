@@ -40,11 +40,10 @@ class FrameAnalyser(QRunnable):
 				self.workQueue.get()
 			frame = self.workQueue.get()
 
-			if self.numLeds is not None:
-				self.numLeds = (11, 28)
-
-			dheight = self.numLeds[0]
-			dwidth = self.numLeds[1]
+			bottom = self.numLeds[0]
+			right = self.numLeds[1]
+			top = self.numLeds[2]
+			left = self.numLeds[3]
 			#rgbImg = frame
 			rgbImg = cv2.pyrDown(frame)
 			rgbImg = cv2.pyrDown(rgbImg)
@@ -58,12 +57,18 @@ class FrameAnalyser(QRunnable):
 				self.testFrame = numpy.zeros((height, width, 3), numpy.uint8)
 
 			i = 0
-			yStep = height / (dheight + 1)
-			xStep = width / (dwidth + 1)
+			yStep = height
+			xStep = width
 
+			if right != 0:
+				yStep = height / (right)
+			if bottom != 0:			
+				xStep = width / (bottom)
+
+			#bottom:
 			y=height
 			x = 0
-			while x < width:
+			while bottom != 0 and x < width:
 				color = get_avg_pixel(rgbImg[height - yStep : height, x : x + xStep])
 				if self.test == True:
 					self.testFrame[height - yStep : height, x : x + xStep] = color[:3]
@@ -71,7 +76,8 @@ class FrameAnalyser(QRunnable):
 				i += 1
 				x += xStep
 
-			while y >= 0:
+			#right:
+			while right != 0 and y >= 0:
 				color = get_avg_pixel(rgbImg[y : y + yStep, width - xStep : width])
 				if self.test == True:
 					self.testFrame[y : y + yStep, width - xStep : width] = color[:3]
@@ -79,15 +85,26 @@ class FrameAnalyser(QRunnable):
 				y -= yStep
 				i += 1
 
-			while x >= 0:
+			#reset steps for top and left
+			yStep = height
+			xStep = width
+
+			if left != 0:
+				yStep = height / (left)
+			if top != 0:			
+				xStep = width / (top)
+
+			#top
+			while top != 0 and x >= 0:
 				color = get_avg_pixel(rgbImg[0 : yStep, x - xStep : x])
 				if self.test == True:
 					self.testFrame[0 : yStep, x - xStep : x] = color[:3]
 				self.hasResults.result.emit(color[0], color[1], color[2], i)
 				x -= xStep
 				i += 1
-
-			while y < height:
+			
+			#left
+			while left != 0 and y < height:
 				color = get_avg_pixel(rgbImg[y : y + yStep, 0 : xStep])
 				if self.test == True:
 					self.testFrame[y : y + yStep, 0 : xStep] = color[:3]

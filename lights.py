@@ -213,12 +213,11 @@ class Apa102Driver:
 		data += chr(0x00) + chr(0x00) + chr(0x00) + chr(0x00)
 		for rgb in ledsData:
 			data += chr(0xff)
-			data += chr(rgb[0]) + chr(rgb[1]) + chr(rgb[2])
+			# apa102 is GBR because THINGS
+			data += chr(rgb[1]) + chr(rgb[2]) + chr(rgb[0])
 
-		i = 0
-		while i < len(ledsData):
-			data += chr(0xff)
-			i+=16
+		#endframe
+		data += chr(0xff) + chr(0xff) + chr(0xff) + chr(0xff)
 
 		self.spiDev.write(data)
 

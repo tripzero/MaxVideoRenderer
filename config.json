@@ -1,0 +1,24 @@
+{
+	"dlnaRenderer" : {
+		"name" : "max",
+		"interface" : "wlan0"
+	},
+
+	"driver" : "Apa102",
+
+	"bottom" : {
+		"ledCount" : 16
+	},
+	
+	"right" : {
+		"ledCount" : 0
+	},
+
+	"top" : {
+		"ledCount" : 0
+	},
+
+	"left" : {
+		"ledCount" : 0
+	}
+}
