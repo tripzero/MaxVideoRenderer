@@ -47,7 +47,7 @@ class FrameAnalyser(QRunnable):
 			#rgbImg = frame
 			rgbImg = cv2.pyrDown(frame)
 			rgbImg = cv2.pyrDown(rgbImg)
-			rgbImg = cv2.cvtColor(rgbImg, cv2.COLOR_YUV2BGR_I420)
+			rgbImg = cv2.cvtColor(rgbImg, cv2.COLOR_YUV2RGB_I420)
 			#cv2.imshow("rgbimg downscaled: ", rgbImg)
 
 			height = rgbImg.shape[0]
@@ -135,6 +135,8 @@ class Player(QObject):
 	colorChanged = pyqtSignal(float, float, float, int)
 	repeat = False
 	numLeds = 0
+	exitOnFinish = False
+
 	def __init__(self, name, iface):
 		QObject.__init__(self)
 		self.workQueue = Queue.Queue()
@@ -178,6 +180,8 @@ class Player(QObject):
 		self.stop()
 
 	def on_finish(self, bus, message):
+		if self.exitOnFinish:
+			sys.exit()
 		print "stream finished"
 		self.stop()
 		if self.repeat == True:

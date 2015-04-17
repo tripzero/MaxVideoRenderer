@@ -22,6 +22,8 @@ def colorChanged(r, g, b, id):
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(prog="maxrenderer", description='minnowboard max dlna renderer with opencv', add_help=False)
 	parser.add_argument('--file', help='play file instead', dest="file")
+	parser.add_argument('--repeat', action='store_true', help="repeat media", dest='repeat')
+	parser.add_argument('--exit', action='store_true', help='exit when playback is complete', dest='exit')
 
 	args = parser.parse_args()
 
@@ -44,7 +46,7 @@ if __name__ == '__main__':
 
 	driver = None
 	driverName = config["driver"]
-	if driverName == "Ws2901":
+	if driverName == "Ws2801":
 		leds = lights.LightArray(numLeds, lights.Ws2801Driver())
 	elif driverName == "Apa102":
 		leds = lights.LightArray(numLeds, lights.Apa102Driver())
@@ -55,6 +57,8 @@ if __name__ == '__main__':
 
 	if args.file is not None:
 		player.setMedia(args.file)
+		player.repeat = args.repeat
+		player.exitOnFinish = args.exit
 		player.play()
 
 	import signal

@@ -4,21 +4,21 @@
 		"interface" : "wlan0"
 	},
 
-	"driver" : "Apa102",
+	"driver" : "Ws2801",
 
 	"bottom" : {
-		"ledCount" : 16
+		"ledCount" : 28
 	},
 	
 	"right" : {
-		"ledCount" : 0
+		"ledCount" : 12
 	},
 
 	"top" : {
-		"ledCount" : 0
+		"ledCount" : 25
 	},
 
 	"left" : {
-		"ledCount" : 0
+		"ledCount" : 9
 	}
 }
