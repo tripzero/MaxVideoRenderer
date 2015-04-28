@@ -8,14 +8,12 @@ set(PROJECT_NAME "iod")
 set(DBUS_SERVICE "io.tripzero.${PROJECT_NAME}")
 set(INTERFACE_PREFIX ${DBUS_SERVICE})
 
-configure_file (${CMAKE_CURRENT_SOURCE_DIR}/iod.py ${CMAKE_CURRENT_BINARY_DIR}/iod @ONLY)
-configure_file (${CMAKE_CURRENT_SOURCE_DIR}/iodclient.py ${CMAKE_CURRENT_BINARY_DIR}/iodclient.py @ONLY)
-configure_file (${CMAKE_CURRENT_SOURCE_DIR}/iod.conf ${CMAKE_CURRENT_BINARY_DIR}/iod.conf @ONLY)
-configure_file (${CMAKE_CURRENT_SOURCE_DIR}/videocolor.py ${CMAKE_CURRENT_BINARY_DIR}/videocolor.py @ONLY)
+configure_file (${CMAKE_CURRENT_SOURCE_DIR}/maxrenderer.py ${CMAKE_CURRENT_BINARY_DIR}/maxrenderer.py @ONLY)
 configure_file (${CMAKE_CURRENT_SOURCE_DIR}/videoplayer.py ${CMAKE_CURRENT_BINARY_DIR}/videoplayer.py @ONLY)
 configure_file (${CMAKE_CURRENT_SOURCE_DIR}/lights.py ${CMAKE_CURRENT_BINARY_DIR}/lights.py @ONLY)
-configure_file (${CMAKE_CURRENT_SOURCE_DIR}/opencvfilter.py ${CMAKE_CURRENT_BINARY_DIR}/opencvfilter.py @ONLY)
+configure_file (${CMAKE_CURRENT_SOURCE_DIR}/opencvfilter/opencvfilter.py ${CMAKE_CURRENT_BINARY_DIR}/opencvfilter/opencvfilter.py @ONLY)
 configure_file (${CMAKE_CURRENT_SOURCE_DIR}/gst_hacks.py ${CMAKE_CURRENT_BINARY_DIR}/gst_hacks.py @ONLY)
+configure_file (${CMAKE_CURRENT_SOURCE_DIR}/config.json ${CMAKE_CURRENT_BINARY_DIR}/config.json @ONLY)
 
 execute_process (
    COMMAND ${PYTHON_EXECUTABLE} -c

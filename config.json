@@ -4,21 +4,21 @@
 		"interface" : "wlan0"
 	},
 
-	"driver" : "Ws2801",
+	"driver" : "OpenCV",
 
 	"bottom" : {
-		"ledCount" : 28
+		"ledCount" : 16
 	},
-	
+
 	"right" : {
-		"ledCount" : 12
+		"ledCount" : 16
 	},
 
 	"top" : {
-		"ledCount" : 25
+		"ledCount" : 16
 	},
 
 	"left" : {
-		"ledCount" : 9
+		"ledCount" : 16
 	}
 }

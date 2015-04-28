@@ -47,80 +47,63 @@ class FrameAnalyser(QRunnable):
 			#rgbImg = frame
 			rgbImg = cv2.pyrDown(frame)
 			rgbImg = cv2.pyrDown(rgbImg)
-			rgbImg = cv2.cvtColor(rgbImg, cv2.COLOR_YUV2RGB_I420)
+			rgbImg = cv2.cvtColor(rgbImg, cv2.COLOR_YUV2BGR_I420)
 			#cv2.imshow("rgbimg downscaled: ", rgbImg)
 
 			height = rgbImg.shape[0]
 			width = rgbImg.shape[1]
 
-			if self.test == True and self.testFrame == None:
-				self.testFrame = numpy.zeros((height, width, 3), numpy.uint8)
-
 			i = 0
-			yStep = height
-			xStep = width
+			yStep = height / 8
+			xStep = width / 8
 
 			if right != 0:
 				yStep = height / (right)
-			if bottom != 0:			
+			if bottom != 0:
 				xStep = width / (bottom)
 
 			#bottom:
 			y=height
 			x = 0
-			while bottom != 0 and x < width:
+			for n in xrange(bottom):
 				color = get_avg_pixel(rgbImg[height - yStep : height, x : x + xStep])
-				if self.test == True:
-					self.testFrame[height - yStep : height, x : x + xStep] = color[:3]
 				self.hasResults.result.emit(color[0], color[1], color[2], i)
 				i += 1
 				x += xStep
 
 			#right:
-			while right != 0 and y >= 0:
-				color = get_avg_pixel(rgbImg[y : y + yStep, width - xStep : width])
-				if self.test == True:
-					self.testFrame[y : y + yStep, width - xStep : width] = color[:3]
+			for n in xrange(right):
+				color = get_avg_pixel(rgbImg[y - yStep : y, width - xStep : width])
 				self.hasResults.result.emit(color[0], color[1], color[2], i)
 				y -= yStep
 				i += 1
 
 			#reset steps for top and left
-			yStep = height
-			xStep = width
+			yStep = height / 8
+			xStep = width / 8
 
 			if left != 0:
 				yStep = height / (left)
-			if top != 0:			
+			if top != 0:
 				xStep = width / (top)
 
+			x = width
+
 			#top
-			while top != 0 and x >= 0:
+			for n in xrange(top):
 				color = get_avg_pixel(rgbImg[0 : yStep, x - xStep : x])
-				if self.test == True:
-					self.testFrame[0 : yStep, x - xStep : x] = color[:3]
 				self.hasResults.result.emit(color[0], color[1], color[2], i)
 				x -= xStep
 				i += 1
-			
+
+			y = 0
+
 			#left
-			while left != 0 and y < height:
+			for n in xrange(left):
 				color = get_avg_pixel(rgbImg[y : y + yStep, 0 : xStep])
-				if self.test == True:
-					self.testFrame[y : y + yStep, 0 : xStep] = color[:3]
 				self.hasResults.result.emit(color[0], color[1], color[2], i)
 				i += 1
 				y += yStep
-
-			if self.test == True:
-				cv2.imshow("test", self.testFrame)
-
-			'''for i in xrange(self.numLeds - 1):
-				x = width / self.numLeds * i
-				y = height / 2 - 20
-				color = get_avg_pixel(rgbImg[y : y + 20, x : x + 20])
-				self.hasResults.result.emit(color[0], color[1], color[2], i)
-			'''
 
 
 	def checkResult(self, future):
@@ -133,12 +116,15 @@ class Player(QObject):
 	renderer = None
 
 	colorChanged = pyqtSignal(float, float, float, int)
+	playbackFinished = pyqtSignal()
+
 	repeat = False
 	numLeds = 0
 	exitOnFinish = False
 
-	def __init__(self, name, iface):
+	def __init__(self, config):
 		QObject.__init__(self)
+		self.config = config
 		self.workQueue = Queue.Queue()
 		self.analyser = FrameAnalyser(self.workQueue)
 		self.analyser.hasResults.result.connect(self.colorChanged)
@@ -146,9 +132,9 @@ class Player(QObject):
 		self.pool.setMaxThreadCount(4)
 		self.pool.start(self.analyser)
 
-		self.renderer = RygelRendererGst.PlaybinRenderer.new(name)
+		self.renderer = RygelRendererGst.PlaybinRenderer.new(config['dlnaRenderer']['name'])
 
-		self.renderer.add_interface(iface)
+		self.renderer.add_interface(config['dlnaRenderer']['interface'])
 		analyserQueue = Gst.ElementFactory.make("queue", "analyserqueue")
 		self.newElement = Gst.ElementFactory.make("opencvpassthrough")
 		self.newElement.setCallback(self.addQueue)
@@ -180,6 +166,7 @@ class Player(QObject):
 		self.stop()
 
 	def on_finish(self, bus, message):
+		self.playbackFinished.emit()
 		if self.exitOnFinish:
 			sys.exit()
 		print "stream finished"
@@ -217,6 +204,7 @@ class Player(QObject):
 	def setNumLeds(self, numLeds):
 		self.numLeds = numLeds
 		self.analyser.numLeds = numLeds
+
 
 
 

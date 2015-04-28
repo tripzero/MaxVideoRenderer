@@ -20,12 +20,17 @@ def colorChanged(r, g, b, id):
 		leds.changeColor(id, (r, g, b))
 
 if __name__ == '__main__':
-	parser = argparse.ArgumentParser(prog="maxrenderer", description='minnowboard max dlna renderer with opencv', add_help=False)
+	parser = argparse.ArgumentParser(prog="maxrenderer", description='minnowboard max dlna renderer with opencv', add_help=True)
 	parser.add_argument('--file', help='play file instead', dest="file")
 	parser.add_argument('--repeat', action='store_true', help="repeat media", dest='repeat')
 	parser.add_argument('--exit', action='store_true', help='exit when playback is complete', dest='exit')
+	parser.add_argument('--drivers', action='store_true', help='list drivers and then exit', dest='drivers')
 
 	args = parser.parse_args()
+
+	if args.drivers:
+		print(lights.drivers)
+		sys.exit()
 
 	app = QApplication(sys.argv)
 
@@ -34,7 +39,7 @@ if __name__ == '__main__':
 	with open('config.json') as dataFile:
 		config = json.load(dataFile)
 
-	player = videoplayer.Player(config["dlnaRenderer"]["name"], config["dlnaRenderer"]["interface"])
+	player = videoplayer.Player(config)
 	player.colorChanged.connect(colorChanged)
 
 	bottom = config["bottom"]["ledCount"]
@@ -51,9 +56,9 @@ if __name__ == '__main__':
 	elif driverName == "Apa102":
 		leds = lights.LightArray(numLeds, lights.Apa102Driver())
 	else:
-		leds = lights.LightArray(numLeds, lights.OpenCvDriver())
+		leds = lights.LightArray(numLeds, lights.OpenCvDriver((bottom, right, top, left)))
 
-	player.setNumLeds((bottom, right, top, left));
+	player.setNumLeds((bottom, right, top, left))
 
 	if args.file is not None:
 		player.setMedia(args.file)
