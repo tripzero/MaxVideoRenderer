@@ -210,14 +210,14 @@ class Apa102Driver:
 
 	def update(self, ledsData):
 		data = bytearray()
-		data += chr(0x00) + chr(0x00) + chr(0x00) + chr(0x00)
+		data[:4] = [0x00, 0x00, 0x00, 0x00]
 		for rgb in ledsData:
-			data += chr(0xff)
+			data.append(0xff)
 			# apa102 is GBR because THINGS
-			data += chr(rgb[1]) + chr(rgb[2]) + chr(rgb[0])
+			data.extend([rgb[1], rgb[2], rgb[0]])
 
 		#endframe
-		data += chr(0xff) + chr(0xff) + chr(0xff) + chr(0xff)
+		data.extend([0xff, 0xff, 0xff, 0xff])
 
 		self.spiDev.write(data)
 

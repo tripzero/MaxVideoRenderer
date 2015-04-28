@@ -41,6 +41,7 @@ if __name__ == '__main__':
 
 	player = videoplayer.Player(config)
 	player.colorChanged.connect(colorChanged)
+	player.playbackFinished.connect(leds.clear)
 
 	bottom = config["bottom"]["ledCount"]
 	right = config["right"]["ledCount"]
