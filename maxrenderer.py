@@ -14,8 +14,14 @@ import json
 from PyQt5.QtWidgets import QApplication
 
 leds = None
+config = None
 
 def colorChanged(r, g, b, id):
+	color = (r, g, b)
+
+	if config["picture"]['colorFormat'] == 'reversed':
+		color = reversed(color)
+
 	if leds is not None:
 		leds.changeColor(id, (r, g, b))
 
@@ -34,14 +40,11 @@ if __name__ == '__main__':
 
 	app = QApplication(sys.argv)
 
-	config = None
-
 	with open('config.json') as dataFile:
 		config = json.load(dataFile)
 
 	player = videoplayer.Player(config)
 	player.colorChanged.connect(colorChanged)
-	player.playbackFinished.connect(leds.clear)
 
 	bottom = config["bottom"]["ledCount"]
 	right = config["right"]["ledCount"]
@@ -60,6 +63,7 @@ if __name__ == '__main__':
 		leds = lights.LightArray(numLeds, lights.OpenCvDriver((bottom, right, top, left)))
 
 	player.setNumLeds((bottom, right, top, left))
+	player.playbackFinished.connect(leds.clear)
 
 	if args.file is not None:
 		player.setMedia(args.file)

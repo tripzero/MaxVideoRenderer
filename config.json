@@ -4,6 +4,11 @@
 		"interface" : "wlan0"
 	},
 
+	"picture" : {
+		"colorFormat" : "normal",
+		"yuv420Convert" : true
+	},
+
 	"driver" : "OpenCV",
 
 	"bottom" : {

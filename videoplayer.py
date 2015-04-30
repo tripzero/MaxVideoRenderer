@@ -28,9 +28,10 @@ class FrameAnalyser(QRunnable):
 	testFrame = None
 	test = False
 
-	def __init__(self, workQueue):
+	def __init__(self, workQueue, config):
 		super(FrameAnalyser, self).__init__()
 		self.workQueue = workQueue
+		self.config = config
 
 
 	def run(self):
@@ -47,8 +48,9 @@ class FrameAnalyser(QRunnable):
 			#rgbImg = frame
 			rgbImg = cv2.pyrDown(frame)
 			rgbImg = cv2.pyrDown(rgbImg)
-			rgbImg = cv2.cvtColor(rgbImg, cv2.COLOR_YUV2BGR_I420)
-			#cv2.imshow("rgbimg downscaled: ", rgbImg)
+
+			if self.config["picture"]["yuv420Convert"]:
+				rgbImg = cv2.cvtColor(rgbImg, cv2.COLOR_YUV2BGR_I420)
 
 			height = rgbImg.shape[0]
 			width = rgbImg.shape[1]
@@ -126,7 +128,7 @@ class Player(QObject):
 		QObject.__init__(self)
 		self.config = config
 		self.workQueue = Queue.Queue()
-		self.analyser = FrameAnalyser(self.workQueue)
+		self.analyser = FrameAnalyser(self.workQueue, config)
 		self.analyser.hasResults.result.connect(self.colorChanged)
 		self.pool = QThreadPool()
 		self.pool.setMaxThreadCount(4)

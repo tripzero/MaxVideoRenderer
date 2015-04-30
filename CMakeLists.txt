@@ -1,4 +1,4 @@
-project(iod)
+project(maxrenderer)
 cmake_minimum_required(VERSION 2.8.11)
 
 find_package(PythonInterp 2.7 REQUIRED)
