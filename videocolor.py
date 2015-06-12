@@ -20,9 +20,6 @@ def colorChanged(r, g, b, id):
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(prog="maxrenderer", description='minnowboard max dlna renderer with opencv', add_help=False)
-	parser.add_argument('name', help='name of renderer on the network')
-	parser.add_argument('interface', help='network interface to use (ie eth0)')
-	parser.add_argument('numLeds', help='number of leds', type=tuple)
 	parser.add_argument('--file', help='play file instead', type=string)
 
 	args = parser.parse_args()
