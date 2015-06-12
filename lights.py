@@ -210,32 +210,99 @@ class Apa102Driver:
 
 	def update(self, ledsData):
 		data = bytearray()
-		data += chr(0x00) + chr(0x00) + chr(0x00) + chr(0x00)
+		data[:4] = [0x00, 0x00, 0x00, 0x00]
 		for rgb in ledsData:
-			data += chr(0xff)
-			data += chr(rgb[0]) + chr(rgb[1]) + chr(rgb[2])
+			data.append(0xff)
+			# apa102 is GBR because THINGS
+			data.extend([rgb[1], rgb[2], rgb[0]])
 
-		i = 0
-		while i < len(ledsData):
-			data += chr(0xff)
-			i+=16
+		#endframe
+		data.extend([0xff, 0xff, 0xff, 0xff])
 
 		self.spiDev.write(data)
 
 class OpenCvDriver:
-
 	image = None
-	size = 20
+	size = 50
+	dimensions = None
+
+	def __init__(self, dimensions):
+		self.dimensions = dimensions
 
 	def update(self, ledsData):
 		import cv2
 
-		if self.image == None:
-			self.image = np.zeros((self.size, ledsData.size / 3 * self.size, 3), np.uint8)
+		bottom, right, top, left = self.dimensions
+		height = max(right, left, 1)
+		width = max(bottom, top, 1)
+		if width == 1 and right and left:
+			width = 2
 
+		if height == 1 and bottom and top:
+			height = 2
+
+		width = width * self.size
+		height = height * self.size
+
+		if self.image == None:
+			self.image = np.zeros((height, width, 3), np.uint8)
+
+		yStep = height / 8
+		xStep = width / 8
+
+		if right != 0:
+			yStep = height / (right)
+		if bottom != 0:
+			xStep = width / (bottom)
+
+		#bottom
+		y = height
 		x = 0
-		for color in ledsData:
-			self.image[0 : self.size, x : x + self.size] = color
-			x += self.size
+
+		if bottom:
+			pos = 0
+			posEnd = bottom
+			for color in ledsData[pos : posEnd]:
+				self.image[height - self.size : height, x : x + xStep] = color
+				x += xStep
+
+		#right
+		if right:
+			pos = bottom
+			posEnd = pos + right
+			for color in ledsData[pos : posEnd]:
+				self.image[y - yStep : y, width - self.size : width] = color
+				y -= yStep
+
+		#reset steps for top and left
+		yStep = height / 8
+		xStep = width / 8
+
+		if left != 0:
+			yStep = height / (left)
+		if top != 0:
+			xStep = width / (top)
+
+		x = width
+
+		#top
+		if top:
+			pos = bottom + right
+			posEnd = pos + top
+			for color in ledsData[pos : posEnd]:
+				self.image[0 : self.size, x - xStep : x] = color
+				x -= xStep
+
+		y = 0
+
+		#left
+		if left:
+			pos = bottom + right + top
+			posEnd = pos + left
+			for color in ledsData[pos : posEnd]:
+				self.image[y : y + yStep, 0 : self.size] = color
+				y += yStep
 
 		cv2.imshow("output", self.image)
+
+drivers = ["Ws2801", "Apa102", "OpenCV"]

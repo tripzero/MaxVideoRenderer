@@ -1,0 +1,29 @@
+{
+	"dlnaRenderer" : {
+		"name" : "DownstairsMax",
+		"interface" : "wlan0"
+	},
+
+	"picture" : {
+		"colorFormat" : "rbg",
+		"yuv420Convert" : true
+	},
+
+	"driver" : "Apa102",
+
+	"bottom" : {
+		"ledCount" : 61
+	},
+
+	"right" : {
+		"ledCount" : 40
+	},
+
+	"top" : {
+		"ledCount" : 61
+	},
+
+	"left" : {
+		"ledCount" : 37
+	}
+}
