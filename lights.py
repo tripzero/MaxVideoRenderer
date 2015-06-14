@@ -110,9 +110,12 @@ class LightArray:
 	driver = None
 
 	def __init__(self, ledArraySize, driver):
-		self.ledArraySize = ledArraySize
-		self.ledsData = np.zeros((ledArraySize+1, 3), np.uint8)
+		self.setLedArraySize(ledArraySize)
 		self.driver = driver
+
+	def setLedArraySize(self, ledArraySize):
+		self.ledArraySize = ledArraySize
+		self.ledsData = np.zeros((ledArraySize, 3), np.uint8)
 
 	def clear(self):
 		self.ledsData[:] = (0,0,0)
