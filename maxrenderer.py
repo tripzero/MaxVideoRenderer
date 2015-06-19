@@ -9,6 +9,7 @@ import videoplayer
 import cv2
 import numpy as np
 import lights
+import lightserver
 import json
 
 from PyQt5.QtWidgets import QApplication
@@ -60,13 +61,20 @@ if __name__ == '__main__':
 	numLeds = bottom + right + top + left
 
 	driver = None
-	driverName = config["driver"]
+	driverName = config["driver"]["name"]
 	if driverName == "Ws2801":
-		leds = lights.LightArray(numLeds, lights.Ws2801Driver())
+		driver = lights.Ws2801Driver()
 	elif driverName == "Apa102":
-		leds = lights.LightArray(numLeds, lights.Apa102Driver())
+		freq = config['driver']['freq']
+		driver = lights.Apa102Driver(freq)
+	elif drivernmae = "WSClient":
+		addy = config["driver"]["address"]
+		port = config["driver"]["port"]
+		driver = lightserver.WSClientDriver(addy, port)
 	else:
-		leds = lights.LightArray(numLeds, lights.OpenCvDriver((bottom, right, top, left)))
+		driver = lights.OpenCvDriver((bottom, right, top, left))
+
+	leds = lights.LightArray(numLeds, driver)
 
 	player.setNumLeds((bottom, right, top, left))
 	player.playbackFinished.connect(leds.clear)

@@ -88,6 +88,7 @@ class ServerProtocol(WebSocketServerProtocol):
 class WSClientDriver(WebSocketClientFactory):
 	server = None
 	ledsDataCopy = None
+	connected = None
 
 	def __init__(self, address, port):
 		WebSocketClientFactory.__init__(self, "ws://{0}:{1}".format(address, port), debug=True, origin='null')
@@ -98,6 +99,8 @@ class WSClientDriver(WebSocketClientFactory):
 
 	def register(self, server):
 		self.server = server
+		if self.connected:
+			self.connected()
 
 	def update(self, ledsData):
 		if not self.server:
@@ -106,11 +109,11 @@ class WSClientDriver(WebSocketClientFactory):
 		if self.ledsDataCopy is None:
 			self.ledsDataCopy = np.array(ledsData, copy=True)
 			self.setNumLeds(len(self.ledsDataCopy))
-
-		diff = np.bitwise_xor(ledsData, self.ledsDataCopy)
+			diff = self.ledsDataCopy
+		else:
+			diff = np.bitwise_xor(ledsData, self.ledsDataCopy)
 
 		ledsToChange = bytearray()
-
 		for i in xrange(len(diff)):
 			if not np.all(np.equal(diff[i], [0,0,0])):
 				ledsToChange.extend(struct.pack('<H', i))
@@ -118,7 +121,8 @@ class WSClientDriver(WebSocketClientFactory):
 
 		header = bytearray()
 		header.append(0x01)
-		header.extend(struct.pack('<H', len(ledsToChange)))
+		print(len(ledsToChange)/5)
+		header.extend(struct.pack('<H', len(ledsToChange)/5))
 		ledsToChange = header + ledsToChange
 
 		self.ledsDataCopy = np.array(ledsData, copy=True)
@@ -135,6 +139,12 @@ class WSClientDriver(WebSocketClientFactory):
 		buff = bytearray()
 		buff.append(0x02)
 		buff.extend(struct.pack('<H', numLeds))
+		self.send(buff)
+
+	def setDebug(self, d):
+		buff = bytearray()
+		buff.append(0x05)
+		buff.append(int(d))
 		self.send(buff)
 
 	def unregister(self):

@@ -1,29 +1,31 @@
 {
-	"dlnaRenderer" : {
-		"name" : "DownstairsMax",
-		"interface" : "wlan0"
-	},
+    "dlnaRenderer" : {
+        "name" : "DownstairsMax",
+        "interface" : "wlan0"
+    },
 
-	"picture" : {
-		"colorFormat" : "rbg",
-		"yuv420Convert" : true
-	},
+    "picture" : {
+        "colorFormat" : "rbg",
+        "yuv420Convert" : true
+    },
 
-	"driver" : "Apa102",
+    "driver" : {
+        "name" : "Apa102",
+        "freq" : 1000000
+    },
+    "bottom" : {
+        "ledCount" : 61
+    },
 
-	"bottom" : {
-		"ledCount" : 61
-	},
+    "right" : {
+        "ledCount" : 40
+    },
 
-	"right" : {
-		"ledCount" : 40
-	},
+    "top" : {
+        "ledCount" : 61
+    },
 
-	"top" : {
-		"ledCount" : 61
-	},
-
-	"left" : {
-		"ledCount" : 37
-	}
+    "left" : {
+        "ledCount" : 37
+    }
 }
