@@ -10,7 +10,7 @@
     },
 
     "driver" : {
-        "name" : "Apa102",
+        "name" : "OpenCVSimple",
         "freq" : 1000000
     },
     "bottom" : {
