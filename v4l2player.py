@@ -24,7 +24,7 @@ def run(workQueue, config):
 			print("No driver specified in config.")
 			return
 
-		driver = getDriver(config["driver"]["name"])
+		driver = getDriver(config["driver"]["name"])()
 
 		numLeds = [config["bottom"]["ledCount"], config["right"]["ledCount"], config["top"]["ledCount"], config["left"]["ledCount"]]
 
@@ -62,14 +62,14 @@ def run(workQueue, config):
 			y=height
 			x = 0
 			for n in range(bottom):
-				color = cv2.mean(rgbImg[height - yStep : height, x : x + xStep])
+				color = cv2.mean(rgbImg[height - yStep : height, x : x + xStep])[:3]
 				leds.changeColor(i, color)
 				i += 1
 				x += xStep
 
 			#right:
 			for n in range(right):
-				color = cv2.mean(rgbImg[y - yStep : y, width - xStep : width])
+				color = cv2.mean(rgbImg[y - yStep : y, width - xStep : width])[:3]
 				leds.changeColor(i, color)
 				y -= yStep
 				i += 1
@@ -87,7 +87,7 @@ def run(workQueue, config):
 
 			#top
 			for n in range(top):
-				color = cv2.mean(rgbImg[0 : yStep, x - xStep : x])
+				color = cv2.mean(rgbImg[0 : yStep, x - xStep : x])[:3]
 				leds.changeColor(i, color)
 				x -= xStep
 				i += 1
@@ -96,10 +96,13 @@ def run(workQueue, config):
 
 			#left
 			for n in range(left):
-				color = cv2.mean(rgbImg[y : y + yStep, 0 : xStep])
+				color = cv2.mean(rgbImg[y : y + yStep, 0 : xStep])[:3]
 				leds.changeColor(i, color)
 				i += 1
 				y += yStep
+
+			leds.updateNow()
+			#cv2.waitKey(1)
 
 class Player:
 	def __init__(self, config):
@@ -109,6 +112,13 @@ class Player:
 
 		self.lights.start()
 
+		p = self.create_pipeline()
+		
+		p.set_state(Gst.State.PLAYING)
+
+		self.bin = p
+
+	def create_pipeline(self):
 		p = Gst.Bin()
 
 
@@ -136,9 +146,37 @@ class Player:
 		source.link(cvpassthrough)
 		cvpassthrough.link(vsink)
 
-		p.set_state(Gst.State.PLAYING)
+		return p
 
-		self.bin = p
+	def create_test_pipeline(self):
+		p = Gst.Bin()
+
+
+		source = Gst.ElementFactory.make("videotestsrc")
+
+		cvpassthrough = Gst.ElementFactory.make("opencvpassthrough")
+
+		if not cvpassthrough:
+			print("Failed to load opencvpassthrough")
+			return
+
+		vsink = Gst.ElementFactory.make("autovideosink")
+
+		if not vsink:
+			print("Failed to load vaapisink.")
+			return
+
+		cvpassthrough.setCallback(self.processFrame)
+
+		p.add(source)
+		p.add(cvpassthrough)
+		p.add(vsink)
+
+		source.link(cvpassthrough)
+		cvpassthrough.link(vsink)
+
+		return p
+
 
 	def processFrame(self, frame):
 		self.queue.put(frame)
