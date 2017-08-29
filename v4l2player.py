@@ -105,7 +105,7 @@ def run(workQueue, config):
 			#cv2.waitKey(1)
 
 class Player:
-	def __init__(self, config):
+	def __init__(self, config, test=False):
 
 		self.queue = Queue()
 		self.lights = Process(target=run, args=(self.queue, config))
@@ -113,6 +113,9 @@ class Player:
 		self.lights.start()
 
 		p = self.create_pipeline()
+
+		if test:
+			p = self.create_test_pipeline()
 		
 		p.set_state(Gst.State.PLAYING)
 
@@ -188,6 +191,7 @@ if __name__ == "__main__":
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--config', type=str, dest="config_name", default="config.json", help="config")
+	parser.add_argument('--test', action='store_true', help='use test source')
 	args, unknown = parser.parse_known_args()
 
 	config = None
