@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import asyncio
+import math
+
 from multiprocessing import Queue, Process
 from photons import LightArray2, getDriver
 import cv2
@@ -50,19 +52,20 @@ def run(workQueue, config):
 			width = rgbImg.shape[1]
 
 			i = 0
-			yStep = height / 8
-			xStep = width / 8
+			yStep = math.floor(height / 8)
+			xStep = math.floor(width / 8)
 
 			if right != 0:
-				yStep = height / (right)
+				yStep = math.floor(height / (right))
 			if bottom != 0:
-				xStep = width / (bottom)
+				xStep = math.floor(width / (bottom))
 
 			#bottom:
 			y=height
 			x = 0
 			for n in range(bottom):
-				color = cv2.mean(rgbImg[height - yStep : height, x : x + xStep])[:3]
+				m = cv2.mean(rgbImg[height - yStep : height, x : x + xStep])
+				color = m[:3]
 				leds.changeColor(i, color)
 				i += 1
 				x += xStep
@@ -75,13 +78,13 @@ def run(workQueue, config):
 				i += 1
 
 			#reset steps for top and left
-			yStep = height / 8
-			xStep = width / 8
+			yStep = math.floor(height / 8)
+			xStep = math.floor(width / 8)
 
 			if left != 0:
-				yStep = height / (left)
+				yStep = math.floor(height / (left))
 			if top != 0:
-				xStep = width / (top)
+				xStep = math.floor(width / (top))
 
 			x = width
 
@@ -121,11 +124,12 @@ class Player:
 
 		self.bin = p
 
-	def create_pipeline(self):
+	def create_pipeline(self, source=None):
 		p = Gst.Bin()
 
+		if source == None:
+			source = Gst.ElementFactory.make("v4l2src")
 
-		source = Gst.ElementFactory.make("v4l2src")
 		cvpassthrough = Gst.ElementFactory.make("opencvpassthrough")
 
 		if not cvpassthrough:
@@ -157,28 +161,7 @@ class Player:
 
 		source = Gst.ElementFactory.make("videotestsrc")
 
-		cvpassthrough = Gst.ElementFactory.make("opencvpassthrough")
-
-		if not cvpassthrough:
-			print("Failed to load opencvpassthrough")
-			return
-
-		vsink = Gst.ElementFactory.make("autovideosink")
-
-		if not vsink:
-			print("Failed to load vaapisink.")
-			return
-
-		cvpassthrough.setCallback(self.processFrame)
-
-		p.add(source)
-		p.add(cvpassthrough)
-		p.add(vsink)
-
-		source.link(cvpassthrough)
-		cvpassthrough.link(vsink)
-
-		return p
+		return self.create_pipeline(source)
 
 
 	def processFrame(self, frame):
@@ -207,6 +190,6 @@ if __name__ == "__main__":
 		traceback.print_exception(exc_type, exc_value, exc_traceback,
                 		          limit=6, file=sys.stdout)
 	
-	p = Player(config)
+	p = Player(config, args.test)
 
 	asyncio.get_event_loop().run_forever()
