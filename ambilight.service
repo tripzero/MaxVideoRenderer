@@ -1,0 +1,9 @@
+[Unit]
+Description = ambilights passthrough service
+
+[Service]
+ExecStart = /home/root/src/MaxVideoRenderer/start-v4l2.sh
+
+[Install]
+WantedBy = graphical.target
+
