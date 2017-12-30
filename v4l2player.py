@@ -24,7 +24,7 @@ import opencvfilter.opencvfilter
 
 
 class SharedCounter(object):
-    """ A synchronized shared counter.
+	""" A synchronized shared counter.
     The locking done by multiprocessing.Value ensures that only a single
     process or thread may read or write the in-memory ctypes object. However,
     in order to do n += 1, Python performs a read followed by a write, so a
@@ -35,22 +35,22 @@ class SharedCounter(object):
     http://eli.thegreenplace.net/2012/01/04/shared-counter-with-pythons-multiprocessing/
     """
 
-    def __init__(self, n = 0):
-        self.count = multiprocessing.Value('i', n)
+	def __init__(self, n = 0):
+		self.count = multiprocessing.Value('i', n)
 
-    def increment(self, n = 1):
-        """ Increment the counter by n (default = 1) """
-        with self.count.get_lock():
-            self.count.value += n
+	def increment(self, n = 1):
+		""" Increment the counter by n (default = 1) """
+		with self.count.get_lock():
+			self.count.value += n
 
-    @property
-    def value(self):
-        """ Return the value of the counter """
-        return self.count.value
+	@property
+	def value(self):
+		""" Return the value of the counter """
+		return self.count.value
 
 
 class Queue():
-    """ A portable implementation of multiprocessing.Queue.
+	""" A portable implementation of multiprocessing.Queue.
     Because of multithreading / multiprocessing semantics, Queue.qsize() may
     raise the NotImplementedError exception on Unix platforms like Mac OS X
     where sem_getvalue() is not implemented. This subclass addresses this
@@ -61,26 +61,26 @@ class Queue():
     qsize() and empty().
     """
 
-    def __init__(self, *args, **kwargs):
-        super(Queue, self).__init__(*args, **kwargs)
-        self.m_queue = multiprocessing.Queue()
-        self.size = SharedCounter(0)
+	def __init__(self, *args, **kwargs):
+		super(Queue, self).__init__(*args, **kwargs)
+		self.m_queue = multiprocessing.Queue()
+		self.size = SharedCounter(0)
 
-    def put(self, *args, **kwargs):
-        self.size.increment(1)
-        self.m_queue.put(*args, **kwargs)
+	def put(self, *args, **kwargs):
+		self.size.increment(1)
+		self.m_queue.put(*args, **kwargs)
 
-    def get(self, *args, **kwargs):
-        self.size.increment(-1)
-        return self.m_queue.get(*args, **kwargs)
+	def get(self, *args, **kwargs):
+		self.size.increment(-1)
+		return self.m_queue.get(*args, **kwargs)
 
-    def qsize(self):
-        """ Reliable implementation of multiprocessing.Queue.qsize() """
-        return self.size.value
+	def qsize(self):
+		""" Reliable implementation of multiprocessing.Queue.qsize() """
+		return self.size.value
 
-    def empty(self):
-        """ Reliable implementation of multiprocessing.Queue.empty() """
-        return not self.qsize()
+	def empty(self):
+		""" Reliable implementation of multiprocessing.Queue.empty() """
+		return not self.qsize()
 
 
 def run(workQueue, config):
@@ -98,7 +98,7 @@ def run(workQueue, config):
 		while True:
 			#catch up to the latest frame if we are behind
 			while work_queue.qsize() > 1:
-               toss = work_queue.get()
+				toss = work_queue.get()
 
 			frame = workQueue.get()
 
