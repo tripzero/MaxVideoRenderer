@@ -83,7 +83,7 @@ class Queue():
 		return not self.qsize()
 
 
-def run(workQueue, config):
+def run(work_queue, config):
 
 		if not "driver" in config:
 			print("No driver specified in config.")
@@ -100,7 +100,7 @@ def run(workQueue, config):
 			while work_queue.qsize() > 1:
 				toss = work_queue.get()
 
-			frame = workQueue.get()
+			frame = work_queue.get()
 
 			bottom = numLeds[0]
 			right = numLeds[1]
