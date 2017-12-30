@@ -10,8 +10,10 @@
     },
 
     "driver" : {
-        "name" : "OpenCVSimple",
-        "freq" : 1000000
+        "name" : "Apa102",
+        "options" : {
+            "pixel_order" : [2, 1, 0]
+        }
     },
     "bottom" : {
         "ledCount" : 61
@@ -22,7 +24,8 @@
     },
 
     "top" : {
-        "ledCount" : 61
+        "ledCount" : 61,
+        "offset" : 100
     },
 
     "left" : {

@@ -89,11 +89,32 @@ def run(work_queue, config):
 			print("No driver specified in config.")
 			return
 
-		driver = getDriver(config["driver"]["name"])()
+		def get_with_default(dictionary, key, default=0):
+			if not key in dictionary:
+				return default
+
+			return dictionary[key]
+
+		driver_name = config["driver"]["name"]
+		driver_options = get_with_default(config['driver'], 'options', {})
+		
+		print("using {} with options:".format(driver_name))
+		print(driver_options)
+		
+		driver = getDriver(driver_name)(**driver_options)
 
 		numLeds = [config["bottom"]["ledCount"], config["right"]["ledCount"], config["top"]["ledCount"], config["left"]["ledCount"]]
+		offsets = [get_with_default(config["bottom"],"offset"),
+				   get_with_default(config["right"],"offset"),
+				   get_with_default(config["top"],"offset"),
+				   get_with_default(config["left"],"offset")]
 
 		leds = LightArray2(np.sum(numLeds), driver)
+
+		bottom = numLeds[0]
+		right = numLeds[1]
+		top = numLeds[2]
+		left = numLeds[3]
 
 		while True:
 			#catch up to the latest frame if we are behind
@@ -101,11 +122,6 @@ def run(work_queue, config):
 				toss = work_queue.get()
 
 			frame = work_queue.get()
-
-			bottom = numLeds[0]
-			right = numLeds[1]
-			top = numLeds[2]
-			left = numLeds[3]
 
 			rgbImg = frame
 
@@ -127,16 +143,18 @@ def run(work_queue, config):
 			#bottom:
 			y=height
 			x = 0
+			offset = offsets[0]
 			for n in range(bottom):
-				m = cv2.mean(rgbImg[height - yStep : height, x : x + xStep])
+				m = cv2.mean(rgbImg[height - yStep - offset : height - offset, x : x + xStep])
 				color = m[:3]
 				leds.changeColor(i, color)
 				i += 1
 				x += xStep
 
 			#right:
+			offset = offsets[1]
 			for n in range(right):
-				color = cv2.mean(rgbImg[y - yStep : y, width - xStep : width])[:3]
+				color = cv2.mean(rgbImg[y - yStep : y, width - xStep - offset: width - offset])[:3]
 				leds.changeColor(i, color)
 				y -= yStep
 				i += 1
@@ -153,8 +171,9 @@ def run(work_queue, config):
 			x = width
 
 			#top
+			offset = offsets[2]
 			for n in range(top):
-				color = cv2.mean(rgbImg[0 : yStep, x - xStep : x])[:3]
+				color = cv2.mean(rgbImg[0 + offset : yStep + offset, x - xStep : x])[:3]
 				leds.changeColor(i, color)
 				x -= xStep
 				i += 1
@@ -162,8 +181,9 @@ def run(work_queue, config):
 			y = 0
 
 			#left
+			offset = offsets[3]
 			for n in range(left):
-				color = cv2.mean(rgbImg[y : y + yStep, 0 : xStep])[:3]
+				color = cv2.mean(rgbImg[y : y + yStep, 0 + offset : xStep + offset])[:3]
 				leds.changeColor(i, color)
 				i += 1
 				y += yStep
@@ -225,7 +245,6 @@ class Player:
 
 	def create_test_pipeline(self):
 		p = Gst.Bin()
-
 
 		source = Gst.ElementFactory.make("videotestsrc")
 
