@@ -107,9 +107,7 @@ def run(work_queue, config):
 			top = numLeds[2]
 			left = numLeds[3]
 
-			#rgbImg = frame
-			rgbImg = cv2.pyrDown(frame)
-			rgbImg = cv2.pyrDown(rgbImg)
+			rgbImg = frame
 
 			if config["picture"]["yuv420Convert"]:
 				rgbImg = cv2.cvtColor(rgbImg, cv2.COLOR_YUV2RGB_I420)
@@ -235,7 +233,9 @@ class Player:
 
 
 	def processFrame(self, frame):
-		self.queue.put(frame)
+		rgbImg = cv2.pyrDown(frame)
+		rgbImg = cv2.pyrDown(rgbImg)
+		self.queue.put(rgbImg)
 
 
 if __name__ == "__main__":
