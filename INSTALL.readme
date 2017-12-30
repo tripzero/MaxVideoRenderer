@@ -1,0 +1,4 @@
+[pulseaduio]
+
+edit /etc/pulse/daemon.conf and set exit-idle-time to -1
+edit /lib/systemd/system/weston.service and add -i0 to set idle timeout to 'forever'

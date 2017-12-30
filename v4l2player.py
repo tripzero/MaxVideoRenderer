@@ -124,11 +124,13 @@ class Player:
 
 		self.bin = p
 
-	def create_pipeline(self, source=None):
+	def create_pipeline(self, source=None, device="/dev/video0"):
 		p = Gst.Bin()
 
 		if source == None:
 			source = Gst.ElementFactory.make("v4l2src")
+
+		videoconvert = Gst.ElementFactory.make("videoconvert")
 
 		cvpassthrough = Gst.ElementFactory.make("opencvpassthrough")
 
@@ -147,10 +149,12 @@ class Player:
 		cvpassthrough.setCallback(self.processFrame)
 
 		p.add(source)
+		p.add(videoconvert)
 		p.add(cvpassthrough)
 		p.add(vsink)
 
-		source.link(cvpassthrough)
+		source.link(videoconvert)
+		videoconvert.link(cvpassthrough)
 		cvpassthrough.link(vsink)
 
 		return p
