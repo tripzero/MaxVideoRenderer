@@ -208,11 +208,22 @@ class Player:
 
 		self.bin = p
 
-	def create_pipeline(self, source=None, device="/dev/video0"):
+	def create_pipeline(self, source=None, device="/dev/video3"):
 		p = Gst.Bin()
 
 		if source == None:
 			source = Gst.ElementFactory.make("v4l2src")
+			source.set_property('device', device)
+
+		tee = Gst.ElementFactory.make("tee")
+
+		camera1caps = Gst.Caps.from_string("video/x-raw, width=1920,height=1080")
+		camerafilter = Gst.ElementFactory.make("capsfilter", "filter1")
+		camerafilter.set_property("caps", camera1caps)
+
+		cvpassthrough_queue = Gst.ElementFactory.make("queue")
+
+		vaapisink_queue = Gst.ElementFactory.make("queue")
 
 		videoconvert = Gst.ElementFactory.make("videoconvert")
 
@@ -221,6 +232,8 @@ class Player:
 		if not cvpassthrough:
 			print("Failed to load opencvpassthrough")
 			return
+
+		fakesink = Gst.ElementFactory.make("fakesink")
 
 		vsink = Gst.ElementFactory.make("vaapisink")
 
@@ -233,13 +246,48 @@ class Player:
 		cvpassthrough.setCallback(self.processFrame)
 
 		p.add(source)
+		p.add(camerafilter)
+		p.add(tee)
+		p.add(cvpassthrough_queue)
+		p.add(vaapisink_queue)
 		p.add(videoconvert)
 		p.add(cvpassthrough)
+		p.add(fakesink)
 		p.add(vsink)
 
-		source.link(videoconvert)
+		"""          cvpassthrough_queue -> videoconvert -> opencvpassthrough -> fakesink
+		src -> tee <
+                     vappisink_queue -> vaapisink
+		"""
+
+		source.link(camerafilter)
+		camerafilter.link(tee)
+
+		# cvpassthrough_queue:
+		
+		cvpassthrough_queue.link(videoconvert)
 		videoconvert.link(cvpassthrough)
-		cvpassthrough.link(vsink)
+		cvpassthrough.link(fakesink)
+
+		# vaapisink queue:
+
+		vaapisink_queue.link(vsink)
+
+		# hook up tee:
+
+		tee.link(cvpassthrough_queue)
+		tee.link(vaapisink_queue)
+
+		"""
+		tee_src_pad_template = tee.get_pad_template("src_%u")
+		tee_cvpassthrough_pad = tee.request_pad(tee_src_pad_template, None, None)
+		cvpassthrough_queue_pad = cvpassthrough_queue.get_static_pad("sink")
+
+		tee_vappisink_pad = tee.request_pad(tee_src_pad_template, None, None)
+		vappisink_queue_pad = vappisink_queue.get_static_pad("sink")
+		"""
+
+
 
 		return p
 
