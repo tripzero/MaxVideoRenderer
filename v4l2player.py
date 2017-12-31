@@ -192,8 +192,9 @@ def run(work_queue, config):
 			#cv2.waitKey(1)
 
 class Player:
-	def __init__(self, config, test=False):
+	def __init__(self, config, test=False, rt_yield=None):
 
+		self.rt_yield = rt_yield
 		self.queue = Queue()
 		self.lights = multiprocessing.Process(target=run, args=(self.queue, config))
 
@@ -207,6 +208,11 @@ class Player:
 		p.set_state(Gst.State.PLAYING)
 
 		self.bin = p
+
+	def handoff_callback(self, sink, buffer, pad):
+		if self.rt_yield:
+			self.rt_yield()
+
 
 	def create_pipeline(self, source=None, device="/dev/video3"):
 		p = Gst.Bin()
@@ -242,6 +248,7 @@ class Player:
 			return
 
 		vsink.set_property('fullscreen', True)
+		vsink.connect('handoff', self.handoff_callback)
 
 		cvpassthrough.setCallback(self.processFrame)
 
@@ -312,6 +319,7 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--config', type=str, dest="config_name", default="config.json", help="config")
 	parser.add_argument('--test', action='store_true', help='use test source')
+	parser.add_argument('--rt', action="store_true", help='user realtime scheddl')
 	args, unknown = parser.parse_known_args()
 
 	config = None
@@ -326,7 +334,22 @@ if __name__ == "__main__":
 		traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
 		traceback.print_exception(exc_type, exc_value, exc_traceback,
                 		          limit=6, file=sys.stdout)
-	
-	p = Player(config, args.test)
+
+	framerate = 30
+	rt_yield = None
+
+	if args.rt:
+		import scheddl
+
+		dl_args = (
+		    (int(1000/framerate) - 1) * 1000 * 1000, # runtime in nanoseconds
+		    int(1000/framerate) * 1000 * 1000, # deadline in nanoseconds
+		    int(1000/framerate) * 1000 * 1000  # time period in nanoseconds
+		)
+
+		scheddl.set_deadline(*dl_args, scheddl.RESET_ON_FORK)
+		rt_yield = scheddl.sched_yield
+
+	p = Player(config, args.test, rt_yield)
 
 	asyncio.get_event_loop().run_forever()
