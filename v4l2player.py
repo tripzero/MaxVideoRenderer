@@ -192,9 +192,11 @@ def run(work_queue, config):
 			#cv2.waitKey(1)
 
 class Player:
-	def __init__(self, config, test=False, rt_yield=None):
+	def __init__(self, config, test=False, rt_yield=None, use_fpssink = False):
 
 		self.rt_yield = rt_yield
+		self.use_fpssink = use_fpssink
+
 		self.queue = Queue()
 		self.lights = multiprocessing.Process(target=run, args=(self.queue, config))
 
@@ -250,6 +252,11 @@ class Player:
 		vsink.set_property('fullscreen', True)
 		vsink.connect('handoff', self.handoff_callback)
 
+		if self.use_fpssink:
+			fpssink = Gst.ElementFactory.make('fpsdisplaysink')
+			fpssink.set_property("video-sink", vsink)
+			vsink = fpssink
+
 		cvpassthrough.setCallback(self.processFrame)
 
 		p.add(source)
@@ -271,12 +278,12 @@ class Player:
 		camerafilter.link(tee)
 
 		# cvpassthrough_queue:
-		
+
 		cvpassthrough_queue.link(videoconvert)
 		videoconvert.link(cvpassthrough)
 		cvpassthrough.link(fakesink)
 
-		# vaapisink queue:
+		# vaapisink_queue:
 
 		vaapisink_queue.link(vsink)
 
@@ -284,17 +291,6 @@ class Player:
 
 		tee.link(cvpassthrough_queue)
 		tee.link(vaapisink_queue)
-
-		"""
-		tee_src_pad_template = tee.get_pad_template("src_%u")
-		tee_cvpassthrough_pad = tee.request_pad(tee_src_pad_template, None, None)
-		cvpassthrough_queue_pad = cvpassthrough_queue.get_static_pad("sink")
-
-		tee_vappisink_pad = tee.request_pad(tee_src_pad_template, None, None)
-		vappisink_queue_pad = vappisink_queue.get_static_pad("sink")
-		"""
-
-
 
 		return p
 
@@ -320,6 +316,7 @@ if __name__ == "__main__":
 	parser.add_argument('--config', type=str, dest="config_name", default="config.json", help="config")
 	parser.add_argument('--test', action='store_true', help='use test source')
 	parser.add_argument('--rt', action="store_true", help='user realtime scheddl')
+	parser.add_argument('--disp_fps', action="store_true", help='display fps counter')
 	args, unknown = parser.parse_known_args()
 
 	config = None
@@ -350,6 +347,6 @@ if __name__ == "__main__":
 		scheddl.set_deadline(*dl_args, scheddl.RESET_ON_FORK)
 		rt_yield = scheddl.sched_yield
 
-	p = Player(config, args.test, rt_yield)
+	p = Player(config, args.test, rt_yield, args.disp_fps)
 
 	asyncio.get_event_loop().run_forever()
