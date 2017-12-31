@@ -214,7 +214,7 @@ class Player:
 			self.rt_yield()
 
 
-	def create_pipeline(self, source=None, device="/dev/video3"):
+	def create_pipeline(self, source=None, device="/dev/video0"):
 		p = Gst.Bin()
 
 		if source == None:
@@ -223,7 +223,7 @@ class Player:
 
 		tee = Gst.ElementFactory.make("tee")
 
-		camera1caps = Gst.Caps.from_string("video/x-raw, width=1920,height=1080")
+		camera1caps = Gst.Caps.from_string("video/x-raw, width=1920,height=1080,framerate=30/1")
 		camerafilter = Gst.ElementFactory.make("capsfilter", "filter1")
 		camerafilter.set_property("caps", camera1caps)
 
