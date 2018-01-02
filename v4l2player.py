@@ -82,8 +82,10 @@ class Queue():
 		""" Reliable implementation of multiprocessing.Queue.empty() """
 		return not self.qsize()
 
+class LedController:
+	def __init__(self, config):
 
-def run(work_queue, config):
+		self.config = config
 
 		if not "driver" in config:
 			print("No driver specified in config.")
@@ -104,17 +106,131 @@ def run(work_queue, config):
 		driver = getDriver(driver_name)(**driver_options)
 
 		numLeds = [config["bottom"]["ledCount"], config["right"]["ledCount"], config["top"]["ledCount"], config["left"]["ledCount"]]
-		offsets = [get_with_default(config["bottom"],"offset"),
+		self.offsets = [get_with_default(config["bottom"],"offset"),
 				   get_with_default(config["right"],"offset"),
 				   get_with_default(config["top"],"offset"),
 				   get_with_default(config["left"],"offset")]
 
-		leds = LightArray2(np.sum(numLeds), driver)
+		self.leds = LightArray2(np.sum(numLeds), driver)
 
-		bottom = numLeds[0]
-		right = numLeds[1]
-		top = numLeds[2]
-		left = numLeds[3]
+		self.bottom = numLeds[0]
+		self.right = numLeds[1]
+		self.top = numLeds[2]
+		self.left = numLeds[3]
+
+	def show_leds_resize(self, frame):
+		if self.config["picture"]["yuv420Convert"]:
+			rgbImg = cv2.cvtColor(frame, cv2.COLOR_YUV2RGB_I420)
+
+		else:
+			rgbImg = frame
+
+		rgbImg = cv2.resize(rgbImg, (np.max([self.top, self.bottom]), np.max([self.left, self.right])))
+
+		height = rgbImg.shape[0] - 1
+		width = rgbImg.shape[1] - 1
+		led_index = 0
+
+		#bottom:
+		offset = self.offsets[0]
+		for i in range(self.bottom):
+			color = rgbImg[height-offset, i]
+			self.leds.changeColor(led_index, color)
+			led_index += 1
+
+		offset = self.offsets[1]
+		for i in range(self.right):
+			color = rgbImg[height - i, width - offset]
+			self.leds.changeColor(led_index, color)
+			led_index += 1
+
+		offset = self.offsets[2]
+		for i in range(self.top):
+			color = rgbImg[offset, width - i]
+			self.leds.changeColor(led_index, color)
+			led_index += 1
+
+		offset = self.offsets[3]
+		for i in range(self.left):
+			color = rgbImg[i, offset]
+			self.leds.changeColor(led_index, color)
+			led_index += 1
+
+
+		self.leds.updateNow()
+
+	def show_leds(self, frame):
+
+		rgbImg = frame
+
+		if self.config["picture"]["yuv420Convert"]:
+			rgbImg = cv2.cvtColor(rgbImg, cv2.COLOR_YUV2RGB_I420)
+
+		height = rgbImg.shape[0]
+		width = rgbImg.shape[1]
+
+		i = 0
+		yStep = math.floor(height / 8)
+		xStep = math.floor(width / 8)
+
+		if self.right != 0:
+			yStep = math.floor(height / (self.right))
+		if self.bottom != 0:
+			xStep = math.floor(width / (self.bottom))
+
+		#bottom:
+		y=height
+		x = 0
+		offset = self.offsets[0]
+		for n in range(self.bottom):
+			m = cv2.mean(rgbImg[height - yStep - offset : height - offset, x : x + xStep])
+			color = m[:3]
+			self.leds.changeColor(i, color)
+			i += 1
+			x += xStep
+
+		#right:
+		offset = self.offsets[1]
+		for n in range(self.right):
+			color = cv2.mean(rgbImg[y - yStep : y, width - xStep - offset: width - offset])[:3]
+			self.leds.changeColor(i, color)
+			y -= yStep
+			i += 1
+
+		#reset steps for top and left
+		yStep = math.floor(height / 8)
+		xStep = math.floor(width / 8)
+
+		if self.left != 0:
+			yStep = math.floor(height / (self.left))
+		if self.top != 0:
+			xStep = math.floor(width / (self.top))
+
+		x = width
+
+		#top
+		offset = self.offsets[2]
+		for n in range(self.top):
+			color = cv2.mean(rgbImg[0 + offset : yStep + offset, x - xStep : x])[:3]
+			self.leds.changeColor(i, color)
+			x -= xStep
+			i += 1
+
+		y = 0
+
+		#left
+		offset = self.offsets[3]
+		for n in range(self.left):
+			color = cv2.mean(rgbImg[y : y + yStep, 0 + offset : xStep + offset])[:3]
+			self.leds.changeColor(i, color)
+			i += 1
+			y += yStep
+
+		self.leds.updateNow()
+
+
+def run(work_queue, config):
+		leds = LedController(config)
 
 		while True:
 			#catch up to the latest frame if we are behind
@@ -123,79 +239,15 @@ def run(work_queue, config):
 
 			frame = work_queue.get()
 
-			rgbImg = frame
-
-			if config["picture"]["yuv420Convert"]:
-				rgbImg = cv2.cvtColor(rgbImg, cv2.COLOR_YUV2RGB_I420)
-
-			height = rgbImg.shape[0]
-			width = rgbImg.shape[1]
-
-			i = 0
-			yStep = math.floor(height / 8)
-			xStep = math.floor(width / 8)
-
-			if right != 0:
-				yStep = math.floor(height / (right))
-			if bottom != 0:
-				xStep = math.floor(width / (bottom))
-
-			#bottom:
-			y=height
-			x = 0
-			offset = offsets[0]
-			for n in range(bottom):
-				m = cv2.mean(rgbImg[height - yStep - offset : height - offset, x : x + xStep])
-				color = m[:3]
-				leds.changeColor(i, color)
-				i += 1
-				x += xStep
-
-			#right:
-			offset = offsets[1]
-			for n in range(right):
-				color = cv2.mean(rgbImg[y - yStep : y, width - xStep - offset: width - offset])[:3]
-				leds.changeColor(i, color)
-				y -= yStep
-				i += 1
-
-			#reset steps for top and left
-			yStep = math.floor(height / 8)
-			xStep = math.floor(width / 8)
-
-			if left != 0:
-				yStep = math.floor(height / (left))
-			if top != 0:
-				xStep = math.floor(width / (top))
-
-			x = width
-
-			#top
-			offset = offsets[2]
-			for n in range(top):
-				color = cv2.mean(rgbImg[0 + offset : yStep + offset, x - xStep : x])[:3]
-				leds.changeColor(i, color)
-				x -= xStep
-				i += 1
-
-			y = 0
-
-			#left
-			offset = offsets[3]
-			for n in range(left):
-				color = cv2.mean(rgbImg[y : y + yStep, 0 + offset : xStep + offset])[:3]
-				leds.changeColor(i, color)
-				i += 1
-				y += yStep
-
-			leds.updateNow()
-			#cv2.waitKey(1)
+			leds.show_leds(frame)
 
 class Player:
 	def __init__(self, config, test=False, rt_yield=None, use_fpssink = False):
 
+		#self.led_controller = LedController(config)
 		self.rt_yield = rt_yield
 		self.use_fpssink = use_fpssink
+		self.light_frame_disp = False
 
 		self.queue = Queue()
 		self.lights = multiprocessing.Process(target=run, args=(self.queue, config))
@@ -223,15 +275,9 @@ class Player:
 			source = Gst.ElementFactory.make("v4l2src")
 			source.set_property('device', device)
 
-		tee = Gst.ElementFactory.make("tee")
-
 		camera1caps = Gst.Caps.from_string("video/x-raw, width=1920,height=1080,framerate=30/1")
 		camerafilter = Gst.ElementFactory.make("capsfilter", "filter1")
 		camerafilter.set_property("caps", camera1caps)
-
-		cvpassthrough_queue = Gst.ElementFactory.make("queue")
-
-		vaapisink_queue = Gst.ElementFactory.make("queue")
 
 		videoconvert = Gst.ElementFactory.make("videoconvert")
 
@@ -240,8 +286,6 @@ class Player:
 		if not cvpassthrough:
 			print("Failed to load opencvpassthrough")
 			return
-
-		fakesink = Gst.ElementFactory.make("fakesink")
 
 		vsink = Gst.ElementFactory.make("vaapisink")
 
@@ -261,36 +305,14 @@ class Player:
 
 		p.add(source)
 		p.add(camerafilter)
-		p.add(tee)
-		p.add(cvpassthrough_queue)
-		p.add(vaapisink_queue)
 		p.add(videoconvert)
 		p.add(cvpassthrough)
-		p.add(fakesink)
 		p.add(vsink)
 
-		"""          cvpassthrough_queue -> videoconvert -> opencvpassthrough -> fakesink
-		src -> tee <
-                     vappisink_queue -> vaapisink
-		"""
-
 		source.link(camerafilter)
-		camerafilter.link(tee)
-
-		# cvpassthrough_queue:
-
-		cvpassthrough_queue.link(videoconvert)
+		camerafilter.link(videoconvert)
 		videoconvert.link(cvpassthrough)
-		cvpassthrough.link(fakesink)
-
-		# vaapisink_queue:
-
-		vaapisink_queue.link(vsink)
-
-		# hook up tee:
-
-		tee.link(cvpassthrough_queue)
-		tee.link(vaapisink_queue)
+		cvpassthrough.link(vsink)
 
 		return p
 
@@ -303,9 +325,11 @@ class Player:
 
 
 	def processFrame(self, frame):
-		rgbImg = cv2.pyrDown(frame)
-		rgbImg = cv2.pyrDown(rgbImg)
-		self.queue.put(rgbImg)
+
+		if self.queue.qsize() <= 1:
+			height, width = frame.shape
+			frame = cv2.pyrDown(frame, ((height+1)/32, (width+1)/32))
+			self.queue.put(frame)
 
 
 if __name__ == "__main__":
