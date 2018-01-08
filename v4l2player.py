@@ -163,6 +163,9 @@ class LedController:
 
 		rgbImg = frame
 
+		#cv2.imshow("frame", frame)
+		#cv2.waitKey(1)
+
 		if self.config["picture"]["yuv420Convert"]:
 			rgbImg = cv2.cvtColor(rgbImg, cv2.COLOR_YUV2RGB_I420)
 
@@ -275,11 +278,12 @@ class Player:
 			source = Gst.ElementFactory.make("v4l2src")
 			source.set_property('device', device)
 
-		camera1caps = Gst.Caps.from_string("video/x-raw, width=1920,height=1080,framerate=30/1")
+		camera1caps = Gst.Caps.from_string("video/x-raw, width=1920,height=1080,framerate=60/1")
 		camerafilter = Gst.ElementFactory.make("capsfilter", "filter1")
 		camerafilter.set_property("caps", camera1caps)
 
 		videoconvert = Gst.ElementFactory.make("videoconvert")
+		videoconvert2 = Gst.ElementFactory.make("videoconvert")
 
 		cvpassthrough = Gst.ElementFactory.make("opencvpassthrough")
 
@@ -307,12 +311,14 @@ class Player:
 		p.add(camerafilter)
 		p.add(videoconvert)
 		p.add(cvpassthrough)
+		p.add(videoconvert2)
 		p.add(vsink)
 
 		source.link(camerafilter)
 		camerafilter.link(videoconvert)
 		videoconvert.link(cvpassthrough)
-		cvpassthrough.link(vsink)
+		cvpassthrough.link(videoconvert2)
+		videoconvert2.link(vsink)
 
 		return p
 
@@ -327,8 +333,8 @@ class Player:
 	def processFrame(self, frame):
 
 		if self.queue.qsize() <= 1:
-			height, width = frame.shape
-			frame = cv2.pyrDown(frame, ((height+1)/32, (width+1)/32))
+			height, width, depth = frame.shape
+			frame = cv2.pyrDown(frame, ((height+1)/64, (width+1)/64))
 			self.queue.put(frame)
 
 
@@ -356,7 +362,7 @@ if __name__ == "__main__":
 		traceback.print_exception(exc_type, exc_value, exc_traceback,
                 		          limit=6, file=sys.stdout)
 
-	framerate = 30
+	framerate = 60
 	rt_yield = None
 
 	if args.rt:
